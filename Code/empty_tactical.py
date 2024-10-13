@@ -26,8 +26,9 @@ def mass_center_of_our_territory(context: TurnContext) -> Coordinates:
     our_area = 0
     x_sum = 0
     y_sum = 0
-
-    for tile in context.get_tiles_of_country(context.my_country):
+    our_tiles = context.get_tiles_of_country(context.my_country)
+    our_area = len(our_tiles)
+    for tile in our_tiles:
         x_sum += tile.x
         y_sum += tile.y
 

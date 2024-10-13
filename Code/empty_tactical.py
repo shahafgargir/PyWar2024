@@ -93,6 +93,9 @@ class MyStrategicApi(StrategicApi):
                 for piece_id, piece in self.context.my_pieces.items()
                 if piece.type == 'tank'}
 
+    def log(self, log_entry):
+        return self.context.log(log_entry)
+
 
 def get_strategic_implementation(context):
     return MyStrategicApi(context)

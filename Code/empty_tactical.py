@@ -7,6 +7,10 @@ import random
 
 tank_to_coordinate_to_attack = {}
 tank_to_attacking_command = {}
+
+builder_to_building_command = {}
+builder_to_piece_type = {}
+
 commands = []
 price_per_piece = {'tank': 8, 'builder': 20}
 
@@ -97,19 +101,38 @@ def move_tank_to_destination(tank: Tank, dest, context):
                                                           prev_command.estimated_turns - 1)
     return False
 
+def builder_do_work(strat_api, context: TurnContext, builder: Builder, piece_type: str):
+    return strat_api.build_piece(StrategicPiece(builder.id, builder.type), piece_type)
+
+
+
+
 class MyStrategicApi(StrategicApi):
     def __init__(self, *args, **kwargs):
         super(MyStrategicApi, self).__init__(*args, **kwargs)
-        to_remove = set()
+        tanks_to_remove = set()
+        builders_to_remove = set()
         for tank_id, destination in tank_to_coordinate_to_attack.items():
             tank = self.context.my_pieces.get(tank_id)
             if tank is None:
-                to_remove.add(tank_id)
+                tanks_to_remove.add(tank_id)
                 continue
             if move_tank_to_destination(tank, destination, self.context):
-                to_remove.add(tank_id)
-        for tank_id in to_remove:
+                tanks_to_remove.add(tank_id)
+        
+        for builder_id, piece_type in builder_to_piece_type.items():
+            builder: Builder = self.context.my_pieces.get(builder_id)
+            if builder is None:
+                builders_to_remove.add(builder_id)
+                continue
+            if builder_do_work(self, self.context, builder, piece_type):
+                builders_to_remove.add(builder_id)
+        
+        for tank_id in tanks_to_remove:
             del tank_to_coordinate_to_attack[tank_id]
+        
+        for builder_id in builders_to_remove:
+            del builder_to_piece_type[builder_id]
 
     def attack(self, piece, destination, radius):
         tank = self.context.my_pieces[piece.id]
@@ -147,17 +170,29 @@ class MyStrategicApi(StrategicApi):
         return {piece : tank_to_attacking_command.get(piece_id)
                 for piece_id, piece in self.context.my_pieces.items()
                 if piece.type == 'tank'}
+    
     def build_piece(self, piece, piece_type):
         builder: Builder = self.context.my_pieces[piece.id]
+        if not builder or builder.type != 'builder':
+            return None
+
+        if piece.id in builder_to_building_command:
+            old_command_id = int(builder_to_building_command[piece.id])
+            commands[old_command_id] = CommandStatus.failed(old_command_id)
+        
+        command_id = str(len(commands))
+        building_command = CommandStatus.in_progress(command_id, 0, 0)
+        builder_to_building_command[piece.id] = command_id
+        commands.append(building_command)
+
         if price_per_piece[piece_type] <= builder.money:
             if piece_type == 'tank':
                 builder.build_tank()
-                return True
             elif piece_type == 'builder':
                 builder.build_builder()
-                return True
             else:
                 return False
+            builder_to_building_command[piece.id]
         else:
             self.collect_money(piece, price_per_piece[piece_type] - builder.money)
 
@@ -168,23 +203,19 @@ class MyStrategicApi(StrategicApi):
         return {piece : builder_to_building_command.get(piece_id)
                 for piece_id, piece in self.context.my_pieces.items()
                 if piece.type == 'builder'}
+    
     def collect_money(self, piece, amount):
         # add function if not added
-
-        builder = self.context.my_pieces[piece.id]
+        builder: Builder = self.context.my_pieces[piece.id]
         if not builder or builder.type != 'builder':
             return None
 
         if builder.tile.money > 0:
-            builder.collect_money(amount)
+            builder.collect_money(builder.tile.money)
         else:
-            destination = builder_get_tile_with_money(builder)
+            destination = builder_get_tile_with_money(self.context, builder)
             step = get_step_to_destination(builder.tile, destination)
             builder.move(step)
-
-        if builder.money >= amount:
-            # remove function
-            pass
 
 
 def get_strategic_implementation(context):

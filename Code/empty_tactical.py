@@ -13,7 +13,7 @@ builder_to_building_command = {}
 builder_to_piece_type = {}
 
 commands = []
-price_per_piece = {'tank': 8, 'builder': 20}
+price_per_piece = {'tank': 8, 'builder': 20, 'artillery': 8, 'antitank': 10}
 
 builder_chosen_tiles = set()
 
@@ -127,7 +127,10 @@ def builder_do_work(context: TurnContext, builder: Builder, piece_type: str):
                 builder.build_tank()
             elif piece_type == 'builder':
                 builder.build_builder()
-            context.log(f"builder {builder.id} is done, deleting map entry...")
+            elif piece_type == 'artillery':
+                builder.build_artillery()
+            elif piece_type == 'antitank':
+                builder.build_antitank()
             commands[int(command_id)] = CommandStatus.success(command_id)
             del builder_to_building_command[builder.id]
             return True
@@ -140,7 +143,7 @@ class MyStrategicApi(StrategicApi):
         super(MyStrategicApi, self).__init__(*args, **kwargs)
         tanks_to_remove = set()
         builders_to_remove = set()
-        builder_chosen_tiles.clear()
+        chosen_tiles = set()
         for tank_id, destination in tank_to_coordinate_to_attack.items():
             tank: Tank = self.context.my_pieces.get(tank_id)
             if tank is None:
@@ -206,7 +209,6 @@ class MyStrategicApi(StrategicApi):
     def build_piece(self, piece, piece_type):
         builder: Builder = self.context.my_pieces[piece.id]
         self.log(f"builder {builder.id} received command to build {piece_type}")
-        self.log(f"{builder_to_building_command}")
         if not builder or builder.type != 'builder':
             return None
 
@@ -228,7 +230,7 @@ class MyStrategicApi(StrategicApi):
         return self.context.log(log_entry)
 
     def report_builders(self):
-        return {piece : builder_to_building_command.get(piece_id, None)
+        return {piece : builder_to_building_command.get(piece_id)
                 for piece_id, piece in self.context.my_pieces.items()
                 if piece.type == 'builder'}
     

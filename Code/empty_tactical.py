@@ -285,9 +285,9 @@ class MyStrategicApi(StrategicApi):
         attacking_pieces = {}
         for piece_id, piece in self.context.my_pieces.items():
             if piece.type == 'tank':
-                attacking_pieces[piece_id] = tank_to_attacking_command.get(piece_id)
+                attacking_pieces[piece] = tank_to_attacking_command.get(piece_id)
             if piece.type == 'antitank':
-                attacking_pieces[piece_id] = antitank_to_attacking_command.get(piece_id)
+                attacking_pieces[piece] = antitank_to_attacking_command.get(piece_id)
         return attacking_pieces
     
     def build_piece(self, piece, piece_type):

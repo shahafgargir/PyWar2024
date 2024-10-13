@@ -64,15 +64,6 @@ def get_tile_to_attack(strategic: StrategicApi, center: Coordinates, tank_tile: 
                     possible_tiles.append(tile)
                 
         if len(possible_tiles) != 0:
-            if piece.type == "antitank":
-                possible_tiles.sort(key = lambda c : distance(c, center), reverse=True)
-            elif piece.type == "tank":
-                possible_tiles.sort(key = lambda c : distance(c, center))   
-            for tile in possible_tiles:
-                if tile in attack_list:
-                    continue
-                else: 
-                    return tile
             return random.choice(possible_tiles)
         else:
             radius += 1

@@ -2,6 +2,30 @@ import random
 
 import common_types
 
+builder_built_builder = {}
+
+def mass_center_of_our_territory(strategic):
+    our_tiles = []
+    x_sum = 0
+    y_sum = 0
+
+    for x in range(strategic.get_game_width()):
+        for y in range(strategic.get_game_height()):
+            coordinate = common_types.Coordinates(x, y)
+            danger = strategic.estimate_tile_danger(coordinate)
+            if danger == 0:
+                x_sum += 1
+                y_sum += 1
+                our_tiles.append(coordinate)
+
+    x_center = x_sum // len(our_tiles)
+    y_center = y_sum // len(our_tiles)
+    mass_center = common_types.Coordinates(x_center, y_center)
+
+    return mass_center
+
+    
+
 def get_sorted_tiles_for_attack(strategic):
     unclaimed_tiles = []
     enemy_tiles = []
@@ -32,3 +56,16 @@ def do_turn(strategic):
         tile_index += 1
         if tile_index >= len(tiles_for_attack):
             break
+
+    builders : dict = strategic.report_builders()
+
+    for builder in builders.keys():
+        if builders[builder][0] is not None:
+            continue
+        if builder_built_builder.get(builder, False):
+            strategic.build_piece(builder, "tank")
+        else:
+            builder_built_builder[builder] = True
+            strategic.build_piece(builder, "builder")
+
+

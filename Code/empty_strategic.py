@@ -9,7 +9,7 @@ OUR_TILE = 0
 UNCLAIMED_TILE = 1
 ENEMY_TILE = 2
 
-builder_built_builder = {}
+builder_built_builder = set()
 
 def mass_center_of_our_territory(strategic: StrategicApi) -> Coordinates:
     our_area = 0
@@ -77,10 +77,10 @@ def do_turn(strategic: StrategicApi):
     for builder in builders.keys():
         if builders[builder] is not None:
             continue
-        if builder_built_builder.get(builder.id, False):
+        if builder.id in builder_built_builder:
             strategic.build_piece(builder, "tank")
         else:
-            builder_built_builder[builder.id] = True
+            builder_built_builder.add(builder.id)
             strategic.build_piece(builder, "builder")
 
 

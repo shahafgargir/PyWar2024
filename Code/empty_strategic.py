@@ -29,7 +29,6 @@ def mass_center_of_our_territory(strategic: StrategicApi) -> Coordinates:
     y_center = y_sum // our_area
     mass_center = common_types.Coordinates(x_center, y_center)
 
-    strategic.log(f"mass center: {mass_center}")
     return mass_center
 
     
@@ -43,7 +42,6 @@ def get_ring_of_radius(strategic: StrategicApi, tile: Tile, r: int) -> list[Coor
             if common_types.distance(t, tile.coordinates) == r:
                 ret.append(t)
     
-    strategic.log(f"potential attack tiles: {ret}")
     return ret
 
 
@@ -59,7 +57,6 @@ def get_tile_to_attack(strategic: StrategicApi, center: Coordinates, tank_tile: 
 
             if len(possible_tiles) != 0:
                 possible_tiles.sort(key = lambda c : distance(c, center))
-                strategic.log(f"tiles by distance from center: {possible_tiles}")
                 return possible_tiles[0]
             else:
                 radius += 1
@@ -78,6 +75,8 @@ def do_turn(strategic: StrategicApi):
     builders : dict[BasePiece, str] = strategic.report_builders()
 
     for builder in builders.keys():
+        strategic.log(f"builder: {builder}")
+        strategic.log(f"command: {builders[builder]}")
         if builders[builder] is not None:
             continue
         if builder_built_builder.get(builder, False):

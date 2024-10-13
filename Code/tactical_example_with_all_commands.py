@@ -1,12 +1,12 @@
 import random
 
-import tactical_api
-import strategic_api
+import tactical_api_typing as tactical_api_typing
+import strategic_api_typing as strategic_api_typing
 
 turn_number = -1
 
 
-class MyStrategicApi(strategic_api.StrategicApi):
+class MyStrategicApi(strategic_api_typing.StrategicApi):
     def __init__(self, *args, **kwargs):
         global turn_number
         super(MyStrategicApi, self).__init__(*args, **kwargs)
@@ -42,29 +42,29 @@ class MyStrategicApi(strategic_api.StrategicApi):
             builder.build_tank()
         elif turn_number == 3:
             builder.build_airplane()
-            tank.move(tactical_api.Coordinates(0, 1))
+            tank.move(tactical_api_typing.Coordinates(0, 1))
         elif turn_number == 4:
             builder.build_artillery()
             tank.attack()
             airplane.take_off()
         elif turn_number == 5:
             builder.build_helicopter()
-            airplane.move(tactical_api.Coordinates(1, 2))
-            artillery.move(tactical_api.Coordinates(0, 1))
+            airplane.move(tactical_api_typing.Coordinates(1, 2))
+            artillery.move(tactical_api_typing.Coordinates(0, 1))
         elif turn_number == 6:
             builder.build_antitank()
             airplane.attack()
-            artillery.attack(tactical_api.Coordinates(1, 1))
+            artillery.attack(tactical_api_typing.Coordinates(1, 1))
             helicopter.take_off()
         elif turn_number == 7:
             builder.build_iron_dome()
             airplane.land()
-            helicopter.move(tactical_api.Coordinates(0, 1))
-            antitank.move(tactical_api.Coordinates(1, 0))
+            helicopter.move(tactical_api_typing.Coordinates(0, 1))
+            antitank.move(tactical_api_typing.Coordinates(1, 0))
         elif turn_number == 8:
             builder.build_bunker()
-            helicopter.attack(tactical_api.Coordinates(0, 2))
-            irondome.move(tactical_api.Coordinates(1, 0))
+            helicopter.attack(tactical_api_typing.Coordinates(0, 2))
+            irondome.move(tactical_api_typing.Coordinates(1, 0))
         elif turn_number == 9:
             builder.build_spy()
             helicopter.land()
@@ -72,7 +72,7 @@ class MyStrategicApi(strategic_api.StrategicApi):
         elif turn_number == 10:
             builder.build_tower()
             irondome.turn_off_protection()
-            spy.move(tactical_api.Coordinates(0, 1))
+            spy.move(tactical_api_typing.Coordinates(0, 1))
         elif turn_number == 11:
             builder.build_satelite()
         elif turn_number == 12:
@@ -81,7 +81,7 @@ class MyStrategicApi(strategic_api.StrategicApi):
             import sys
             for piece in self.context.my_pieces.values():
                 sys.stderr.write(piece.type + '\n')
-            satelite.move(tactical_api.Coordinates(2, 2))
+            satelite.move(tactical_api_typing.Coordinates(2, 2))
             builder.build_builder()
 
 

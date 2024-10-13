@@ -1,4 +1,7 @@
 import common_types
+from common_types import Coordinates
+from tactical_api_typing import Tank, Builder, TurnContext, distance, Tile
+from strategic_api_typing import CommandStatus, StrategicApi, StrategicPiece
 import math
 import random
 
@@ -110,7 +113,7 @@ class MyStrategicApi(StrategicApi):
         tanks_to_remove = set()
         builders_to_remove = set()
         for tank_id, destination in tank_to_coordinate_to_attack.items():
-            tank = self.context.my_pieces.get(tank_id)
+            tank: Tank = self.context.my_pieces.get(tank_id)
             if tank is None:
                 tanks_to_remove.add(tank_id)
                 continue

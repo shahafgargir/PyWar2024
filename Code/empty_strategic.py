@@ -12,7 +12,7 @@ ENEMY_TILE = 2
 builder_built_builder = {}
 
 def mass_center_of_our_territory(strategic: StrategicApi) -> Coordinates:
-    our_tiles = []
+    our_area = 0
     x_sum = 0
     y_sum = 0
 
@@ -23,13 +23,13 @@ def mass_center_of_our_territory(strategic: StrategicApi) -> Coordinates:
             if danger == OUR_TILE:
                 x_sum += x
                 y_sum += y
-                our_tiles.append(coordinate)
+                our_area += 1
 
-    x_center = x_sum // len(our_tiles)
-    y_center = y_sum // len(our_tiles)
+    x_center = x_sum // our_area
+    y_center = y_sum // our_area
     mass_center = common_types.Coordinates(x_center, y_center)
 
-    # strategic.log("mass center: {mass_center}")
+    strategic.log("mass center: {mass_center}")
     return mass_center
 
     
@@ -43,7 +43,7 @@ def get_ring_of_radius(strategic: StrategicApi, tile: Tile, r: int) -> list[Coor
             if common_types.distance(t, tile.coordinates) == r:
                 ret.append(t)
     
-    # strategic.log(f"potential attack tiles: {ret}")
+    strategic.log(f"potential attack tiles: {ret}")
     return ret
 
 
@@ -59,7 +59,7 @@ def get_tile_to_attack(strategic: StrategicApi, center: Coordinates, tank_tile: 
 
             if len(possible_tiles) != 0:
                 possible_tiles.sort(key = lambda c : distance(c, center))
-                # strategic.log(f"tiles by distance from center: {possible_tiles}")
+                strategic.log(f"tiles by distance from center: {possible_tiles}")
                 return possible_tiles[0]
             else:
                 radius += 1

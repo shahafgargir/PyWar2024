@@ -47,7 +47,7 @@ def get_ring_of_radius(strategic: StrategicApi, tile: Tile, r: int) -> list[Coor
 
 
 def get_tile_to_attack(strategic: StrategicApi, center: Coordinates, tank_tile: Tile, piece : BasePiece) -> Coordinates:
-    radius = 1
+    radius = 3
     possible_tiles: list[Coordinates] = []
     while True:
         if radius >= 50:

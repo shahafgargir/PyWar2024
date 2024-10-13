@@ -98,11 +98,10 @@ def do_turn(strategic: StrategicApi):
     for builder in builders.keys():
         if builders[builder] is not None:
             continue
-        if len(builders) < MAX_BUILDERS:
-            strategic.build_piece(builder, "builder")
+        if builder.id not in builder_built_builder and len(builders) >= MAX_BUILDERS:
             builder_built_builder[builder.id] = 1
-        
-        elif  builder.id not in builder_built_builder:
+        if  builder.id not in builder_built_builder:
+            strategic.build_piece(builder, "builder")
             builder_built_builder[builder.id] = 0
         elif builder_built_builder[builder.id] % 3 == 0:
             strategic.build_piece(builder, "antitank")

@@ -104,5 +104,9 @@ class MyStrategicApi(StrategicApi):
         else:
             self.collect_money(builder, price_per_piece[piece_type] - builder.money)
 
+    def log(self, log_entry):
+        return self.context.log(log_entry)
+
+
 def get_strategic_implementation(context):
     return MyStrategicApi(context)

@@ -29,7 +29,7 @@ def mass_center_of_our_territory(strategic: StrategicApi) -> Coordinates:
     y_center = y_sum // our_area
     mass_center = common_types.Coordinates(x_center, y_center)
 
-    strategic.log("mass center: {mass_center}")
+    strategic.log(f"mass center: {mass_center}")
     return mass_center
 
     

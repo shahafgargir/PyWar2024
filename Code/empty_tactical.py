@@ -28,7 +28,7 @@ def get_mass_center(context: TurnContext):
         return None
     return center_coords
 
-def get_step_to_destination(start, destination):
+def get_step_to_destination(start: Coordinates, destination: Coordinates):
     if start.x < destination.x:
         return common_types.Coordinates(start.x - 1, start.y)
     elif start.x > destination.x:
@@ -113,7 +113,7 @@ def builder_collect_money(context: TurnContext, builder: Builder):
         builder.collect_money(min(builder.tile.money, 5))
     else:
         destination = builder_get_tile_with_money(context, builder)
-        step = get_step_to_destination(builder.tile, destination)
+        step = get_step_to_destination(builder.tile.coordinates, destination.coordinates)
         builder.move(step)
 
 def builder_do_work(context: TurnContext, builder: Builder, piece_type: str):

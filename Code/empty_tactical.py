@@ -147,7 +147,8 @@ class MyStrategicApi(StrategicApi):
         return {piece : tank_to_attacking_command.get(piece_id)
                 for piece_id, piece in self.context.my_pieces.items()
                 if piece.type == 'tank'}
-    def build_piece(self, builder, piece_type):
+    def build_piece(self, piece, piece_type):
+        builder: Builder = self.context.my_pieces[piece.id]
         if price_per_piece[piece_type] <= builder.money:
             if piece_type == 'tank':
                 builder.build_tank()
@@ -158,7 +159,7 @@ class MyStrategicApi(StrategicApi):
             else:
                 return False
         else:
-            self.collect_money(builder, price_per_piece[piece_type] - builder.money)
+            self.collect_money(piece, price_per_piece[piece_type] - builder.money)
 
     def log(self, log_entry):
         return self.context.log(log_entry)

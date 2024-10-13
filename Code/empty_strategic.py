@@ -98,7 +98,7 @@ def do_turn(strategic: StrategicApi):
     for builder in builders.keys():
         if builders[builder] is not None:
             continue
-        if builder.id not in builder_built_builder and len(builders) < MAX_BUILDERS:
+        if builder.id not in builder_built_builder and len(builders) > MAX_BUILDERS:
             builder_built_builder[builder.id] = 1
         if  builder.id not in builder_built_builder:
             strategic.build_piece(builder, "builder")

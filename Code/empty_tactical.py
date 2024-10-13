@@ -205,7 +205,7 @@ class MyStrategicApi(StrategicApi):
                 continue
             if move_antitank_to_destination(antitank, destination, self.context):
                 antitanks_to_remove.add(antitank_id)
-        
+
         for builder_id, piece_type in builder_to_piece_type.items():
             builder: Builder = self.context.my_pieces.get(builder_id)
             if builder is None:
@@ -213,7 +213,7 @@ class MyStrategicApi(StrategicApi):
                 continue
             if builder_do_work(self.context, builder, piece_type):
                 builders_to_remove.add(builder_id)
-        
+
         for tank_id in tanks_to_remove:
             del tank_to_coordinate_to_attack[tank_id]
 
@@ -246,7 +246,7 @@ class MyStrategicApi(StrategicApi):
                 antitank = self.context.my_pieces[piece.id]
                 if not antitank or antitank.type != 'antitank':
                     return None
-                
+
                 if piece.id in antitank_to_attacking_command:
                     old_command_id = int(antitank_to_attacking_command[piece.id])
                     commands[old_command_id] = CommandStatus.failed(old_command_id)
@@ -256,11 +256,13 @@ class MyStrategicApi(StrategicApi):
                 antitank_to_coordinate_to_attack[piece.id] = destination
                 antitank_to_attacking_command[piece.id] = command_id
                 commands.append(attacking_command)
-                
+
 
     def estimate_tile_danger(self, destination):
         tile = self.context.tiles[Coordinates(destination.x, destination.y)]
-        if tile.country == self.context.my_country:
+        if any([piece.country != self.context.my_country for piece in tile.pieces]):
+            return 3
+        elif tile.country == self.context.my_country:
             return 0
         elif tile.country is None:
             return 1
@@ -281,7 +283,7 @@ class MyStrategicApi(StrategicApi):
             if piece.type == 'antitank':
                 attacking_pieces[piece] = antitank_to_attacking_command.get(piece_id)
         return attacking_pieces
-    
+
     def build_piece(self, piece, piece_type):
         builder: Builder = self.context.my_pieces[piece.id]
         if not builder or builder.type != 'builder':
@@ -290,7 +292,7 @@ class MyStrategicApi(StrategicApi):
         if piece.id in builder_to_building_command:
             old_command_id = int(builder_to_building_command[piece.id])
             commands[old_command_id] = CommandStatus.failed(old_command_id)
-        
+
         command_id = str(len(commands))
         building_command = CommandStatus.in_progress(command_id, 0, 0)
         builder_to_building_command[piece.id] = command_id
@@ -299,7 +301,7 @@ class MyStrategicApi(StrategicApi):
 
         return command_id
 
-        
+
 
     def log(self, log_entry):
         return self.context.log(log_entry)

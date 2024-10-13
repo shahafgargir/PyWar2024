@@ -17,6 +17,8 @@ price_per_piece = {'tank': 8, 'builder': 20, 'artillery': 8, 'antitank': 10}
 
 builder_chosen_tiles = set()
 
+builder_money_taken: dict[Coordinates, list[int]] = {}
+
 def get_mass_center(context: TurnContext) -> Coordinates:
     tiles = context.get_tiles_of_country(context.my_country)
     sum_x = 0
@@ -113,8 +115,15 @@ def builder_collect_money(context: TurnContext, builder: Builder):
     if not builder or builder.type != 'builder':
         return None
 
-    if builder.tile.money > 0:
-        builder.collect_money(min(builder.tile.money, 5))
+    tile_coords = builder.tile.coordinates
+    if tile_coords not in builder_money_taken:
+        builder_money_taken[tile_coords] = []
+    tile_money = builder.tile.money - sum(builder_money_taken[tile_coords])
+
+    if tile_money > 0:
+        collected_amnt = min(builder.tile.money, 5)
+        builder.collect_money(collected_amnt)
+        builder_money_taken[tile_coords].append(collected_amnt)
     else:
         destination = builder_get_tile_with_money(context, builder)
         step = get_step_to_destination(builder.tile.coordinates, destination.coordinates)
@@ -143,7 +152,8 @@ class MyStrategicApi(StrategicApi):
         super(MyStrategicApi, self).__init__(*args, **kwargs)
         tanks_to_remove = set()
         builders_to_remove = set()
-        chosen_tiles = set()
+        builder_chosen_tiles.clear()
+        builder_money_taken.clear()
         for tank_id, destination in tank_to_coordinate_to_attack.items():
             tank: Tank = self.context.my_pieces.get(tank_id)
             if tank is None:

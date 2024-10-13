@@ -127,6 +127,7 @@ def builder_do_work(context: TurnContext, builder: Builder, piece_type: str):
                 builder.build_tank()
             elif piece_type == 'builder':
                 builder.build_builder()
+            context.log(f"builder {builder.id} is done, deleting map entry...")
             commands[int(command_id)] = CommandStatus.success(command_id)
             del builder_to_building_command[builder.id]
             return True
@@ -139,7 +140,7 @@ class MyStrategicApi(StrategicApi):
         super(MyStrategicApi, self).__init__(*args, **kwargs)
         tanks_to_remove = set()
         builders_to_remove = set()
-        chosen_tiles = set()
+        builder_chosen_tiles.clear()
         for tank_id, destination in tank_to_coordinate_to_attack.items():
             tank: Tank = self.context.my_pieces.get(tank_id)
             if tank is None:
@@ -205,6 +206,7 @@ class MyStrategicApi(StrategicApi):
     def build_piece(self, piece, piece_type):
         builder: Builder = self.context.my_pieces[piece.id]
         self.log(f"builder {builder.id} received command to build {piece_type}")
+        self.log(f"{builder_to_building_command}")
         if not builder or builder.type != 'builder':
             return None
 
@@ -226,7 +228,7 @@ class MyStrategicApi(StrategicApi):
         return self.context.log(log_entry)
 
     def report_builders(self):
-        return {piece : builder_to_building_command.get(piece_id)
+        return {piece : builder_to_building_command.get(piece_id, None)
                 for piece_id, piece in self.context.my_pieces.items()
                 if piece.type == 'builder'}
     

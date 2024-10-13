@@ -1,11 +1,56 @@
 import common_types
+from common_types import Coordinates
 from strategic_api import CommandStatus, StrategicApi, StrategicPiece
+from tactical_api import Tank, Builder, TurnContext, distance, Tile
+import math
+import random
 
 tank_to_coordinate_to_attack = {}
 tank_to_attacking_command = {}
 commands = []
 price_per_piece = {'tank': 8, 'builder': 20}
-def move_tank_to_destination(tank, dest, context):
+
+def get_mass_center(context: TurnContext):
+    tiles = context.get_tiles_of_country(context.my_country)
+    sum_x = 0
+    sum_y = 0
+    for tile in tiles:
+        sum_x += tile.coordinates.x
+        sum_y += tile.coordinates.y
+    
+    center_coords = (math.floor(sum_x / len(tiles)), math.floor(sum_y / len(tiles)))
+    if context.tiles[Coordinates(*center_coords)].country != context.my_country:
+        return None
+    return center_coords
+
+
+def get_tile_ring(context: TurnContext, coords: Coordinates, radius: int) -> list[Tile]:
+    retval = []
+    for tile_coord, tile in context.tiles.items():
+        if distance(tile_coord, coords) <= radius:
+            retval.append(tile)
+    return retval
+
+
+def builder_get_tile_with_money(context: TurnContext, builder: Builder) -> Tile | None:
+    coords = builder.tile.coordinates
+    for radius in range(1, 4):
+        maxtile : None | Tile = None
+        tiles = get_tile_ring(context, coords, radius)
+        for tile in tiles:
+            if tile.country != context.my_country:
+                continue
+            if tile.money == 0:
+                continue
+            if maxtile is None:
+                maxtile = tile
+            elif maxtile.money < tile.money:
+                maxtile = tile
+    
+    return random.choice(tiles)
+
+
+def move_tank_to_destination(tank: Tank, dest, context):
     """Returns True if the tank's mission is complete."""
     command_id = tank_to_attacking_command[tank.id]
     if dest is None:
@@ -73,7 +118,7 @@ class MyStrategicApi(StrategicApi):
         return command_id
 
     def estimate_tile_danger(self, destination):
-        tile = self.context.tiles[(destination.x, destination.y)]
+        tile = self.context.tiles[Coordinates(destination.x, destination.y)]
         if tile.country == self.context.my_country:
             return 0
         elif tile.country is None:
@@ -88,7 +133,7 @@ class MyStrategicApi(StrategicApi):
         return self.context.game_width
 
     def report_attacking_pieces(self):
-        return {StrategicPiece(piece_id, piece.type) : tank_to_attacking_command.get(piece_id)
+        return {piece : tank_to_attacking_command.get(piece_id)
                 for piece_id, piece in self.context.my_pieces.items()
                 if piece.type == 'tank'}
     def build_piece(self, builder, piece_type):
@@ -106,6 +151,12 @@ class MyStrategicApi(StrategicApi):
 
     def log(self, log_entry):
         return self.context.log(log_entry)
+
+    
+    def report_builders(self):
+        return {piece : builder_to_building_command.get(piece_id)
+                for piece_id, piece in self.context.my_pieces.items()
+                if piece.type == 'builder'}
 
 
 def get_strategic_implementation(context):

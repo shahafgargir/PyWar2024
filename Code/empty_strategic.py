@@ -75,14 +75,12 @@ def do_turn(strategic: StrategicApi):
     builders : dict[BasePiece, str] = strategic.report_builders()
 
     for builder in builders.keys():
-        strategic.log(f"builder: {builder}")
-        strategic.log(f"command: {builders[builder]}")
         if builders[builder] is not None:
             continue
-        if builder_built_builder.get(builder, False):
+        if builder_built_builder.get(builder.id, False):
             strategic.build_piece(builder, "tank")
         else:
-            builder_built_builder[builder] = True
+            builder_built_builder[builder.id] = True
             strategic.build_piece(builder, "builder")
 
 

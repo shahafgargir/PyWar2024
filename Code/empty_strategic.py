@@ -8,6 +8,7 @@ from tactical_api import Tile, BasePiece
 OUR_TILE = 0
 UNCLAIMED_TILE = 1
 ENEMY_TILE = 2
+ENEMY_TANK = 3
 
 builder_built_builder = {}
 attack_list = set()
@@ -45,28 +46,28 @@ def get_ring_of_radius(strategic: StrategicApi, tile: Tile, r: int) -> list[Coor
     return ret
 
 
-def get_tile_to_attack(strategic: StrategicApi, center: Coordinates, tank_tile: Tile) -> Coordinates:
+def get_tile_to_attack(strategic: StrategicApi, center: Coordinates, tank_tile: Tile, piece : BasePiece) -> Coordinates:
     radius = 1
     possible_tiles: list[Coordinates] = []
     while True:
         if radius >= 100:
             return None # everything is ours, long live Shahaf the king
         for tile in get_ring_of_radius(strategic, tank_tile, radius):
-            if strategic.estimate_tile_danger(tile) != OUR_TILE:
-                possible_tiles.append(tile)
+            if piece.type == "tank":
+                if strategic.estimate_tile_danger(tile) != OUR_TILE:
+                    possible_tiles.append(tile)
+            elif piece.type == "antitank":
+                if strategic.estimate_tile_danger(tile) != ENEMY_TANK:
+                    possible_tiles.append(tile)
 
         if len(possible_tiles) != 0:
             possible_tiles.sort(key = lambda c : distance(c, center))
             for tile in possible_tiles:
-                if tile in attack_list and random.randrange(2) == 0:
+                if tile in attack_list:
                     continue
                 else: 
-
                     return tile
             return random.choice(possible_tiles)
-        
-
-
         else:
             radius += 1
             possible_tiles = []
@@ -80,7 +81,7 @@ def do_turn(strategic: StrategicApi):
     for piece, command_id in attacking_pieces.items():
         if command_id is not None:
             continue
-        strategic.attack({StrategicPiece(piece.id, piece.type)}, get_tile_to_attack(strategic, mass_center_of_our_territory(strategic), piece.tile), 1)
+        strategic.attack({StrategicPiece(piece.id, piece.type)}, get_tile_to_attack(strategic, mass_center_of_our_territory(strategic), piece.tile, piece), 1)
 
     builders : dict[BasePiece, str] = strategic.report_builders()
 
@@ -90,7 +91,7 @@ def do_turn(strategic: StrategicApi):
         if builder.id not in builder_built_builder:
             strategic.build_piece(builder, "builder")
             builder_built_builder[builder.id] = 0
-        elif builder_built_builder[builder.id] % 4 == 0:
+        elif builder_built_builder[builder.id] % 3 == 0:
             strategic.build_piece(builder, "antitank")
         else:
             strategic.build_piece(builder, "tank")

@@ -44,6 +44,7 @@ def get_step_to_destination(start, destination):
 def get_tile_ring(context: TurnContext, coords: Coordinates, radius: int) -> list[Tile]:
     retval = []
     for tile_coord, tile in context.tiles.items():
+        context.log(f"{tile_coord}, {tile}")
         if distance(tile_coord, coords) <= radius:
             retval.append(tile)
     return retval
@@ -53,6 +54,7 @@ def builder_get_tile_with_money(context: TurnContext, builder: Builder) -> Tile:
     coords = builder.tile.coordinates
     for radius in range(1, 4):
         maxtile : Tile = None
+        context.log(f"coords: {coords}")
         tiles = get_tile_ring(context, coords, radius)
         for tile in tiles:
             if tile.country != context.my_country:
@@ -114,7 +116,7 @@ def builder_collect_money(context: TurnContext, builder: Builder):
         step = get_step_to_destination(builder.tile, destination)
         builder.move(step)
 
-def builder_do_work(strat_api, context: TurnContext, builder: Builder, piece_type: str):
+def builder_do_work(context: TurnContext, builder: Builder, piece_type: str):
     command_id = builder_to_building_command[builder.id]
     if price_per_piece[piece_type] <= builder.money:
             if piece_type == 'tank':
@@ -149,7 +151,7 @@ class MyStrategicApi(StrategicApi):
             if builder is None:
                 builders_to_remove.add(builder_id)
                 continue
-            if builder_do_work(self, self.context, builder, piece_type):
+            if builder_do_work(self.context, builder, piece_type):
                 builders_to_remove.add(builder_id)
         
         for tank_id in tanks_to_remove:

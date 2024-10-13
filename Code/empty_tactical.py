@@ -132,17 +132,9 @@ def move_antitank_to_destination(antitank: Antitank, dest, context):
     elif dest.y > antitank_coordinate.y:
         new_coordinate = common_types.Coordinates(antitank_coordinate.x, antitank_coordinate.y + 1)
     else:
-        antitank.attack()
         commands[int(command_id)] = CommandStatus.success(command_id)
         del antitank_to_attacking_command[antitank.id]
         return True
-    if tile.country != context.my_country:
-        antitank.attack()
-        prev_command = commands[int(command_id)]
-        commands[int(command_id)] = CommandStatus.in_progress(command_id,
-                                                          prev_command.elapsed_turns + 1,
-                                                          prev_command.estimated_turns - 1)
-        return False
     antitank.move(new_coordinate)
     prev_command = commands[int(command_id)]
     commands[int(command_id)] = CommandStatus.in_progress(command_id,

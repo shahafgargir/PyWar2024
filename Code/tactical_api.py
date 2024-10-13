@@ -289,12 +289,13 @@ class TurnContext(object):
     my_country: str
     all_countries: list[str]
 
-    def get_tiles_of_country(self, country_name):
+    def get_tiles_of_country(self, country_name) -> set[Tile]:
         """Returns the set of tile coordinates owned by the given country name.
 
         If country_name is None, the returned coordinates are of tiles that do not
         belong to any country.
         """
+        pass
 
     def get_sighings_of_piece(self, piece_id):
         """Returns the sightings of the given piece.

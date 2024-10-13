@@ -1,6 +1,6 @@
 import common_types
 from common_types import Coordinates
-from tactical_api import Tank, Builder, TurnContext, distance, Tile
+from tactical_api import Tank, Antitank, Builder, TurnContext, distance, Tile
 from strategic_api import CommandStatus, StrategicPiece
 from strategic_api import StrategicApi
 import math
@@ -8,6 +8,9 @@ import random
 
 tank_to_coordinate_to_attack = {}
 tank_to_attacking_command = {}
+
+antitank_to_coordinate_to_attack = {}
+antitank_to_attacking_command = {}
 
 builder_to_building_command = {}
 builder_to_piece_type = {}
@@ -111,6 +114,42 @@ def move_tank_to_destination(tank: Tank, dest, context):
                                                           prev_command.estimated_turns - 1)
     return False
 
+
+def move_antitank_to_destination(antitank: Antitank, dest, context):
+    """Returns True if the antitank's mission is complete."""
+    command_id = antitank_to_attacking_command[antitank.id]
+    if dest is None:
+        commands[int(command_id)] = CommandStatus.failed(command_id)
+        return
+    antitank_coordinate = antitank.tile.coordinates
+    tile = context.tiles[(antitank_coordinate.x, antitank_coordinate.y)]
+    if dest.x < antitank_coordinate.x:
+        new_coordinate = common_types.Coordinates(antitank_coordinate.x - 1, antitank_coordinate.y)
+    elif dest.x > antitank_coordinate.x:
+        new_coordinate = common_types.Coordinates(antitank_coordinate.x + 1, antitank_coordinate.y)
+    elif dest.y < antitank_coordinate.y:
+        new_coordinate = common_types.Coordinates(antitank_coordinate.x, antitank_coordinate.y - 1)
+    elif dest.y > antitank_coordinate.y:
+        new_coordinate = common_types.Coordinates(antitank_coordinate.x, antitank_coordinate.y + 1)
+    else:
+        antitank.attack()
+        commands[int(command_id)] = CommandStatus.success(command_id)
+        del antitank_to_attacking_command[antitank.id]
+        return True
+    if tile.country != context.my_country:
+        antitank.attack()
+        prev_command = commands[int(command_id)]
+        commands[int(command_id)] = CommandStatus.in_progress(command_id,
+                                                          prev_command.elapsed_turns + 1,
+                                                          prev_command.estimated_turns - 1)
+        return False
+    antitank.move(new_coordinate)
+    prev_command = commands[int(command_id)]
+    commands[int(command_id)] = CommandStatus.in_progress(command_id,
+                                                          prev_command.elapsed_turns + 1,
+                                                          prev_command.estimated_turns - 1)
+    return False
+
 def builder_collect_money(context: TurnContext, builder: Builder):
     if not builder or builder.type != 'builder':
         return None
@@ -151,10 +190,14 @@ def builder_do_work(context: TurnContext, builder: Builder, piece_type: str):
 class MyStrategicApi(StrategicApi):
     def __init__(self, *args, **kwargs):
         super(MyStrategicApi, self).__init__(*args, **kwargs)
+
         tanks_to_remove = set()
+        antitanks_to_remove = set()
         builders_to_remove = set()
+
         builder_chosen_tiles.clear()
         builder_money_taken.clear()
+
         for tank_id, destination in tank_to_coordinate_to_attack.items():
             tank: Tank = self.context.my_pieces.get(tank_id)
             if tank is None:
@@ -162,6 +205,14 @@ class MyStrategicApi(StrategicApi):
                 continue
             if move_tank_to_destination(tank, destination, self.context):
                 tanks_to_remove.add(tank_id)
+
+        for antitank_id, destination in antitank_to_coordinate_to_attack.items():
+            antitank: Antitank = self.context.my_pieces.get(antitank_id)
+            if antitank is None:
+                antitanks_to_remove.add(antitank_id)
+                continue
+            if move_antitank_to_destination(antitank, destination, self.context):
+                antitanks_to_remove.add(antitank_id)
         
         for builder_id, piece_type in builder_to_piece_type.items():
             builder: Builder = self.context.my_pieces.get(builder_id)
@@ -173,7 +224,10 @@ class MyStrategicApi(StrategicApi):
         
         for tank_id in tanks_to_remove:
             del tank_to_coordinate_to_attack[tank_id]
-        
+
+        for antitank_id in antitanks_to_remove:
+            del antitank_to_coordinate_to_attack[antitank_id]
+
         for builder_id in builders_to_remove:
             del builder_to_piece_type[builder_id]
 

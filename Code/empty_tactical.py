@@ -22,18 +22,20 @@ builder_chosen_tiles = set()
 
 builder_money_taken: dict[Coordinates, list[int]] = {}
 
-def get_mass_center(context: TurnContext) -> Coordinates:
-    tiles = context.get_tiles_of_country(context.my_country)
-    sum_x = 0
-    sum_y = 0
-    for tile in tiles:
-        sum_x += tile.x
-        sum_y += tile.y
-    
-    center_coords = Coordinates(math.floor(sum_x / len(tiles)), math.floor(sum_y / len(tiles)))
-    # if context.tiles[Coordinates(*center_coords)].country != context.my_country:
-    #     return None
-    return center_coords
+def mass_center_of_our_territory(context: TurnContext) -> Coordinates:
+    our_area = 0
+    x_sum = 0
+    y_sum = 0
+
+    for tile in context.get_tiles_of_country(context.my_country):
+        x_sum += tile.x
+        y_sum += tile.y
+
+    x_center = x_sum // our_area
+    y_center = y_sum // our_area
+    mass_center = Coordinates(x_center, y_center)
+
+    return mass_center
 
 def get_step_to_destination(start: Coordinates, destination: Coordinates):
     if destination.x < start.x:
@@ -48,35 +50,44 @@ def get_step_to_destination(start: Coordinates, destination: Coordinates):
     return start
 
 
-def get_tile_ring(context: TurnContext, coords: Coordinates, radius: int) -> list[Tile]:
-    retval = []
-    for tile_coord, tile in context.tiles.items():
+def get_ring_of_radius(context: TurnContext, coords: Coordinates, r: int) -> list[Tile]:
+    ret = []
+    x, y = coords.x, coords.y
+    for i in range(-r, r+1):
+        for j in range(-r, r+1):
+            t = common_types.Coordinates((x+i) % context.game_width, (y+j) % context.game_height)
+            if common_types.distance(t, coords) == r:
+                ret.append(context.tiles[t])
+    
+    return ret
 
-        if distance(Coordinates(*tile_coord), coords) <= radius:
-            retval.append(tile)
-    return retval
+def get_tile_map(context: TurnContext, coords: Coordinates):
+    ret = {r:[] for r in range(60)}
+    for tile_coords, tile in context.tiles.items():
+        ret[distance(Coordinates(*tile_coords), coords)].append(tile)
+    
+    return ret
+
+
 
 
 def builder_get_tile_with_money(context: TurnContext, builder: Builder) -> Tile:
     coords = builder.tile.coordinates
-    for radius in range(1, 4):
-        maxtile : Tile = None
-        tiles = get_tile_ring(context, coords, radius)
-        for tile in tiles:
+    tile_map = get_tile_map(context, coords)
+    for radius, tiles_at_radius in tile_map.items():
+        goodtiles = []
+        for tile in tiles_at_radius:
             if tile.country != context.my_country:
                 continue
             if tile.money == 0:
                 continue
             if tile in builder_chosen_tiles:
                 continue
-            if maxtile is None:
-                maxtile = tile
-            elif maxtile.money < tile.money:
-                maxtile = tile
-        if maxtile is not None:
-            return maxtile
+            goodtiles.append(tile)
+        if len(goodtiles) != 0:
+            return random.choice(goodtiles)
     
-    return context.tiles[get_mass_center(context)]
+    return context.tiles[mass_center_of_our_territory(context)]
 
 
 def move_tank_to_destination(tank: Tank, dest, context):

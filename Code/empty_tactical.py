@@ -44,8 +44,8 @@ def get_step_to_destination(start, destination):
 def get_tile_ring(context: TurnContext, coords: Coordinates, radius: int) -> list[Tile]:
     retval = []
     for tile_coord, tile in context.tiles.items():
-        context.log(f"{tile_coord}, {tile}")
-        if distance(tile_coord, coords) <= radius:
+
+        if distance(Coordinates(*tile_coord), coords) <= radius:
             retval.append(tile)
     return retval
 

@@ -127,7 +127,7 @@ def builder_do_work(context: TurnContext, builder: Builder, piece_type: str):
                 builder.build_tank()
             elif piece_type == 'builder':
                 builder.build_builder()
-            builder_to_building_command[builder.id] = CommandStatus.success(command_id)
+            commands[int(command_id)] = CommandStatus.success(command_id)
             del builder_to_building_command[builder.id]
             return True
     # we dont have enough money, go collect it!

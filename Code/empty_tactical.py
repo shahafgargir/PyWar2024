@@ -127,6 +127,7 @@ def builder_do_work(context: TurnContext, builder: Builder, piece_type: str):
             elif piece_type == 'builder':
                 builder.build_builder()
             builder_to_building_command[builder.id] = CommandStatus.success(command_id)
+            del builder_to_building_command[builder.id]
             return True
     # we dont have enough money, go collect it!
     return builder_collect_money(context, builder)
@@ -157,11 +158,9 @@ class MyStrategicApi(StrategicApi):
         
         for tank_id in tanks_to_remove:
             del tank_to_coordinate_to_attack[tank_id]
-            del tank_to_attacking_command[tank_id]
         
         for builder_id in builders_to_remove:
             del builder_to_piece_type[builder_id]
-            del builder_to_building_command[builder_id]
 
     def attack(self, pieces: set[StrategicPiece], destination: Coordinates, radius: int):
         if len(pieces) == 0:

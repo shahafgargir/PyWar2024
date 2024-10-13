@@ -108,7 +108,7 @@ def builder_collect_money(context: TurnContext, builder: Builder):
         return None
 
     if builder.tile.money > 0:
-        builder.collect_money(builder.tile.money)
+        builder.collect_money(min(builder.tile.money, 5))
     else:
         destination = builder_get_tile_with_money(context, builder)
         step = get_step_to_destination(builder.tile, destination)

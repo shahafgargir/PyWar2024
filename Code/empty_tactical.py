@@ -114,9 +114,9 @@ def builder_collect_money(context: TurnContext, builder: Builder):
     else:
         destination = builder_get_tile_with_money(context, builder)
         step = get_step_to_destination(builder.tile.coordinates, destination.coordinates)
-        context.log(str(step))
-        context.log(str(destination))
-        context.log(str(builder.tile.coordinates))
+        context.log("dest: " + str(destination.coordinates))
+        context.log("builder: " + str(builder.tile.coordinates))
+        context.log("step:" + str(step))
         builder.move(step)
 
 def builder_do_work(context: TurnContext, builder: Builder, piece_type: str):

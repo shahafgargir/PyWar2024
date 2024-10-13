@@ -29,13 +29,13 @@ def get_mass_center(context: TurnContext) -> Coordinates:
     return center_coords
 
 def get_step_to_destination(start: Coordinates, destination: Coordinates):
-    if start.x < destination.x:
+    if destination.x < start.x:
         return common_types.Coordinates(start.x - 1, start.y)
-    elif start.x > destination.x:
+    elif destination.x > start.x:
         return common_types.Coordinates(start.x + 1, start.y)
-    elif start.y < destination.y:
+    elif destination.y < start.y:
         return common_types.Coordinates(start.x, start.y - 1)
-    elif start.y > destination.y:
+    elif destination.y > start.y:
         return common_types.Coordinates(start.x, start.y + 1)
 
     return start

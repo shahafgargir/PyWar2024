@@ -23,6 +23,18 @@ def get_mass_center(context: TurnContext):
         return None
     return center_coords
 
+def get_step_to_destination(start, destination):
+    if start.x < destination.x:
+        return common_types.Coordinates(start.x - 1, start.y)
+    elif start.x > destination.x:
+        return common_types.Coordinates(start.x + 1, start.y)
+    elif start.y < destination.y:
+        return common_types.Coordinates(start.x, start.y - 1)
+    elif start.y > destination.y:
+        return common_types.Coordinates(start.x, start.y + 1)
+
+    return start
+
 
 def get_tile_ring(context: TurnContext, coords: Coordinates, radius: int) -> list[Tile]:
     retval = []
@@ -85,7 +97,6 @@ def move_tank_to_destination(tank: Tank, dest, context):
                                                           prev_command.estimated_turns - 1)
     return False
 
-
 class MyStrategicApi(StrategicApi):
     def __init__(self, *args, **kwargs):
         super(MyStrategicApi, self).__init__(*args, **kwargs)
@@ -136,7 +147,8 @@ class MyStrategicApi(StrategicApi):
         return {piece : tank_to_attacking_command.get(piece_id)
                 for piece_id, piece in self.context.my_pieces.items()
                 if piece.type == 'tank'}
-    def build_piece(self, builder, piece_type):
+    def build_piece(self, piece, piece_type):
+        builder: Builder = self.context.my_pieces[piece.id]
         if price_per_piece[piece_type] <= builder.money:
             if piece_type == 'tank':
                 builder.build_tank()
@@ -147,16 +159,32 @@ class MyStrategicApi(StrategicApi):
             else:
                 return False
         else:
-            self.collect_money(builder, price_per_piece[piece_type] - builder.money)
+            self.collect_money(piece, price_per_piece[piece_type] - builder.money)
 
     def log(self, log_entry):
         return self.context.log(log_entry)
 
-    
     def report_builders(self):
         return {piece : builder_to_building_command.get(piece_id)
                 for piece_id, piece in self.context.my_pieces.items()
                 if piece.type == 'builder'}
+    def collect_money(self, piece, amount):
+        # add function if not added
+
+        builder = self.context.my_pieces[piece.id]
+        if not builder or builder.type != 'builder':
+            return None
+
+        if builder.tile.money > 0:
+            builder.collect_money(amount)
+        else:
+            destination = builder_get_tile_with_money(builder)
+            step = get_step_to_destination(builder.tile, destination)
+            builder.move(step)
+
+        if builder.money >= amount:
+            # remove function
+            pass
 
 
 def get_strategic_implementation(context):

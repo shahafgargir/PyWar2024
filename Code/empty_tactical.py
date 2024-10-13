@@ -157,7 +157,7 @@ class MyStrategicApi(StrategicApi):
         
         for tank_id in tanks_to_remove:
             del tank_to_coordinate_to_attack[tank_id]
-            tank_to_attacking_command[tank_id] = None
+            del tank_to_attacking_command[tank_id]
         
         for builder_id in builders_to_remove:
             del builder_to_piece_type[builder_id]

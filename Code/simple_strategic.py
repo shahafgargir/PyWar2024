@@ -17,7 +17,7 @@ def mass_center_of_our_territory(strategic):
         for y in range(strategic.get_game_height()):
             coordinate = common_types.Coordinates(x, y)
             danger = strategic.estimate_tile_danger(coordinate)
-            if danger == 0:
+            if danger == OUR_TILE:
                 x_sum += 1
                 y_sum += 1
                 our_tiles.append(coordinate)
@@ -60,18 +60,13 @@ def get_tile_to_attack(strategic, center, tank_coord):
 
 
 def do_turn(strategic):
-    tiles_for_attack = get_sorted_tiles_for_attack(strategic)
-    if len(tiles_for_attack) == 0:
-        return
+
     attacking_pieces = strategic.report_attacking_pieces()
-    tile_index = 0
+
     for piece, command_id in attacking_pieces.items():
         if command_id is not None:
             continue
-        strategic.attack(piece, tiles_for_attack[tile_index], 1)
-        tile_index += 1
-        if tile_index >= len(tiles_for_attack):
-            break
+        strategic.attack(piece, get_tile_to_attack(strategic, mass_center_of_our_territory(), piece.tile), 1)
 
     builders : dict = strategic.report_builders()
 

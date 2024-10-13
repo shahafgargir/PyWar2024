@@ -161,7 +161,7 @@ class MyStrategicApi(StrategicApi):
         
         for builder_id in builders_to_remove:
             del builder_to_piece_type[builder_id]
-            builder_to_piece_type[builder_id] = None
+            builder_to_building_command[builder_id] = None
 
     def attack(self, pieces: set[StrategicPiece], destination: Coordinates, radius: int):
         if len(pieces) == 0:

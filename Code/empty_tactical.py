@@ -227,10 +227,5 @@ class MyStrategicApi(StrategicApi):
                 for piece_id, piece in self.context.my_pieces.items()
                 if piece.type == 'builder'}
     
-    def collect_money(self, piece, amount):
-        # add function if not added
-        
-
-
 def get_strategic_implementation(context):
     return MyStrategicApi(context)

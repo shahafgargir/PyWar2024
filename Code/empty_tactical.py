@@ -151,7 +151,7 @@ def builder_collect_money(context: TurnContext, builder: Builder):
         builder_money_taken[tile_coords] = []
     tile_money = builder.tile.money - sum(builder_money_taken[tile_coords])
 
-    if tile_money > 0:
+    if tile_money > 0 and builder.tile.country == context.my_country:
         collected_amnt = min(builder.tile.money, 5)
         builder.collect_money(collected_amnt)
         builder_money_taken[tile_coords].append(collected_amnt)

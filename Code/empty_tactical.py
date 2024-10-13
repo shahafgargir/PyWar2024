@@ -102,8 +102,30 @@ def move_tank_to_destination(tank: Tank, dest, context):
                                                           prev_command.estimated_turns - 1)
     return False
 
+def builder_collect_money(context: TurnContext, builder: Builder):
+    context.log(f"builder {builder.id} is collecting money")
+    if not builder or builder.type != 'builder':
+        return None
+
+    if builder.tile.money > 0:
+        builder.collect_money(builder.tile.money)
+    else:
+        destination = builder_get_tile_with_money(context, builder)
+        step = get_step_to_destination(builder.tile, destination)
+        builder.move(step)
+
 def builder_do_work(strat_api, context: TurnContext, builder: Builder, piece_type: str):
-    return strat_api.build_piece(StrategicPiece(builder.id, builder.type), piece_type)
+    command_id = builder_to_building_command[builder.id]
+    if price_per_piece[piece_type] <= builder.money:
+            if piece_type == 'tank':
+                builder.build_tank()
+            elif piece_type == 'builder':
+                builder.build_builder()
+            builder_to_building_command[builder.id] = CommandStatus.success(command_id)
+            del builder_to_piece_type[builder.id]
+            return True
+    # we dont have enough money, go collect it!
+    return builder_collect_money(context, builder)
 
 
 
@@ -190,18 +212,12 @@ class MyStrategicApi(StrategicApi):
         command_id = str(len(commands))
         building_command = CommandStatus.in_progress(command_id, 0, 0)
         builder_to_building_command[piece.id] = command_id
+        builder_to_piece_type[piece.id] = piece_type
         commands.append(building_command)
 
-        if price_per_piece[piece_type] <= builder.money:
-            if piece_type == 'tank':
-                builder.build_tank()
-            elif piece_type == 'builder':
-                builder.build_builder()
-            else:
-                return False
-            builder_to_building_command[piece.id]
-        else:
-            self.collect_money(piece, price_per_piece[piece_type] - builder.money)
+        return command_id
+
+        
 
     def log(self, log_entry):
         return self.context.log(log_entry)
@@ -213,17 +229,7 @@ class MyStrategicApi(StrategicApi):
     
     def collect_money(self, piece, amount):
         # add function if not added
-        builder: Builder = self.context.my_pieces[piece.id]
-        self.log(f"builder {builder.id} is collecting money")
-        if not builder or builder.type != 'builder':
-            return None
-
-        if builder.tile.money > 0:
-            builder.collect_money(builder.tile.money)
-        else:
-            destination = builder_get_tile_with_money(self.context, builder)
-            step = get_step_to_destination(builder.tile, destination)
-            builder.move(step)
+        
 
 
 def get_strategic_implementation(context):

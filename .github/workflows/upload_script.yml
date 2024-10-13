@@ -20,4 +20,4 @@ jobs:
 
       - name: Run unload_script.py
         run: |
-          python upload_script.py -d ${{ github.workspace }} -n "Github Actions #${{ github.run_number }}     by ${{github.actor}}" -p 2222 --tactical-module empty_tactical --strategic-module empty_strategic --password "eLY.Z[Ci^mrPN),TnA]<" -s pywar.ddns.net -p 55552
+          python upload_script.py -d ${{ github.workspace }} -n "Github Actions #${{ github.run_number }}     by ${{github.actor}}" --tactical-module empty_tactical --strategic-module empty_strategic --password "eLY.Z[Ci^mrPN),TnA]<" -s pywar.ddns.net -p 5555

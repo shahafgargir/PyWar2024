@@ -71,10 +71,10 @@ def do_turn(strategic: StrategicApi):
             continue
         strategic.attack({StrategicPiece(piece.id, piece.type)}, get_tile_to_attack(strategic, mass_center_of_our_territory(strategic), piece.tile), 1)
 
-    builders : dict = strategic.report_builders()
+    builders : dict[BasePiece, str] = strategic.report_builders()
 
     for builder in builders.keys():
-        if builders[builder][0] is not None:
+        if builders[builder] is not None:
             continue
         if builder_built_builder.get(builder, False):
             strategic.build_piece(builder, "tank")

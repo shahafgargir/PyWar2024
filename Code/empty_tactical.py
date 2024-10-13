@@ -135,7 +135,10 @@ class MyStrategicApi(StrategicApi):
         for builder_id in builders_to_remove:
             del builder_to_piece_type[builder_id]
 
-    def attack(self, piece, destination, radius):
+    def attack(self, pieces: set[StrategicPiece], destination: Coordinates, radius: int):
+        if len(pieces) == 0:
+            return None
+        piece = list(pieces)[0]
         tank = self.context.my_pieces[piece.id]
         if not tank or tank.type != 'tank':
             return None

@@ -15,7 +15,7 @@ builder_to_piece_type = {}
 commands = []
 price_per_piece = {'tank': 8, 'builder': 20}
 
-def get_mass_center(context: TurnContext):
+def get_mass_center(context: TurnContext) -> Coordinates:
     tiles = context.get_tiles_of_country(context.my_country)
     sum_x = 0
     sum_y = 0
@@ -23,9 +23,9 @@ def get_mass_center(context: TurnContext):
         sum_x += tile.coordinates.x
         sum_y += tile.coordinates.y
     
-    center_coords = (math.floor(sum_x / len(tiles)), math.floor(sum_y / len(tiles)))
-    if context.tiles[Coordinates(*center_coords)].country != context.my_country:
-        return None
+    center_coords = Coordinates(math.floor(sum_x / len(tiles)), math.floor(sum_y / len(tiles)))
+    # if context.tiles[Coordinates(*center_coords)].country != context.my_country:
+    #     return None
     return center_coords
 
 def get_step_to_destination(start: Coordinates, destination: Coordinates):
@@ -64,8 +64,10 @@ def builder_get_tile_with_money(context: TurnContext, builder: Builder) -> Tile:
                 maxtile = tile
             elif maxtile.money < tile.money:
                 maxtile = tile
+        if maxtile is not None:
+            return maxtile
     
-    return random.choice(tiles)
+    return context.tiles[get_mass_center(context)]
 
 
 def move_tank_to_destination(tank: Tank, dest, context):

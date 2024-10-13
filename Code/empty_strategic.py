@@ -91,10 +91,14 @@ def do_turn(strategic: StrategicApi):
 
     builders : dict[BasePiece, str] = strategic.report_builders()
 
+    MAX_BUILDERS = 7
+    if strategic.get_game_height() < 15:
+        MAX_BUILDERS = 3
+
     for builder in builders.keys():
         if builders[builder] is not None:
             continue
-        if builder.id not in builder_built_builder:
+        if len(builders) < MAX_BUILDERS and builder.id not in builder_built_builder:
             strategic.build_piece(builder, "builder")
             builder_built_builder[builder.id] = 0
         elif builder_built_builder[builder.id] % 3 == 0:

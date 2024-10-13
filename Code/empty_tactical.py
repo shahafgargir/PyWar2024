@@ -140,6 +140,7 @@ def builder_do_work(context: TurnContext, builder: Builder, piece_type: str):
                 builder.build_artillery()
             elif piece_type == 'antitank':
                 builder.build_antitank()
+            context.log(f"builder built {piece_type}")
             commands[int(command_id)] = CommandStatus.success(command_id)
             del builder_to_building_command[builder.id]
             return True
@@ -179,22 +180,37 @@ class MyStrategicApi(StrategicApi):
     def attack(self, pieces: set[StrategicPiece], destination: Coordinates, radius: int):
         if len(pieces) == 0:
             return None
-        piece = list(pieces)[0]
-        tank = self.context.my_pieces[piece.id]
-        if not tank or tank.type != 'tank':
-            return None
+        for piece in pieces:
+            if piece.type == 'tank':
+                tank = self.context.my_pieces[piece.id]
+                if not tank or tank.type != 'tank':
+                    return None
 
-        if piece.id in tank_to_attacking_command:
-            old_command_id = int(tank_to_attacking_command[piece.id])
-            commands[old_command_id] = CommandStatus.failed(old_command_id)
+                if piece.id in tank_to_attacking_command:
+                    old_command_id = int(tank_to_attacking_command[piece.id])
+                    commands[old_command_id] = CommandStatus.failed(old_command_id)
 
-        command_id = str(len(commands))
-        attacking_command = CommandStatus.in_progress(command_id, 0, common_types.distance(tank.tile.coordinates, destination))
-        tank_to_coordinate_to_attack[piece.id] = destination
-        tank_to_attacking_command[piece.id] = command_id
-        commands.append(attacking_command)
+                command_id = str(len(commands))
+                attacking_command = CommandStatus.in_progress(command_id, 0, common_types.distance(tank.tile.coordinates, destination))
+                tank_to_coordinate_to_attack[piece.id] = destination
+                tank_to_attacking_command[piece.id] = command_id
+                commands.append(attacking_command)
+                return command_id
+            if piece.type == 'antitank':
+                antitank = self.context.my_pieces[piece.id]
+                if not antitank or antitank.type != 'antitank':
+                    return None
+                
+                if piece.id in antitank_to_attacking_command:
+                    old_command_id = int(antitank_to_attacking_command[piece.id])
+                    commands[old_command_id] = CommandStatus.failed(old_command_id)
 
-        return command_id
+                command_id = str(len(commands))
+                attacking_command = CommandStatus.in_progress(command_id, 0, common_types.distance(antitank.tile.coordinates, destination))
+                antitank_to_coordinate_to_attack[piece.id] = destination
+                antitank_to_attacking_command[piece.id] = command_id
+                commands.append(attacking_command)
+                
 
     def estimate_tile_danger(self, destination):
         tile = self.context.tiles[Coordinates(destination.x, destination.y)]
@@ -212,13 +228,16 @@ class MyStrategicApi(StrategicApi):
         return self.context.game_width
 
     def report_attacking_pieces(self):
-        return {piece : tank_to_attacking_command.get(piece_id)
-                for piece_id, piece in self.context.my_pieces.items()
-                if piece.type == 'tank'}
+        attacking_pieces = {}
+        for piece_id, piece in self.context.my_pieces.items():
+            if piece.type == 'tank':
+                attacking_pieces[piece_id] = tank_to_attacking_command.get(piece_id)
+            if piece.type == 'antitank':
+                attacking_pieces[piece_id] = antitank_to_attacking_command.get(piece_id)
+        return attacking_pieces
     
     def build_piece(self, piece, piece_type):
         builder: Builder = self.context.my_pieces[piece.id]
-        self.log(f"builder {builder.id} received command to build {piece_type}")
         if not builder or builder.type != 'builder':
             return None
 

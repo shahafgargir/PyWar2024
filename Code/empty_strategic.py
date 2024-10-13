@@ -39,7 +39,7 @@ def get_ring_of_radius(strategic: StrategicApi, tile: Tile, r: int):
     for i in range(-r, r+1):
         for j in range(-r, r+1):
             t = common_types.Coordinates((x+i) % strategic.get_game_width(), (y+j) % strategic.get_game_height())
-            if common_types.distance(t, tile) == r:
+            if common_types.distance(t, tile.coordinates) == r:
                 ret.append(t)
     return ret
 

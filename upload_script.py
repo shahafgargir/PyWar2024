@@ -40,7 +40,7 @@ def parse_args():
 
 def add_directory_to_tarball(tarball, directory, base_dir=None):
     for filename in os.listdir(directory):
-        if filename in ["strategic_api.py", "tactical_api.py"]:
+        if filename in ["strategic_api.py", "tactical_api.py", "common_types.py"]:
             continue
         real_path = os.path.join(directory, filename)
         if base_dir is None:

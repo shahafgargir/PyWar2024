@@ -289,7 +289,7 @@ class TurnContext(object):
     my_country: str
     all_countries: list[str]
 
-    def get_tiles_of_country(self, country_name) -> set[Tile]:
+    def get_tiles_of_country(self, country_name) -> set[Coordinates]:
         """Returns the set of tile coordinates owned by the given country name.
 
         If country_name is None, the returned coordinates are of tiles that do not

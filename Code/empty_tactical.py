@@ -22,8 +22,8 @@ def get_mass_center(context: TurnContext) -> Coordinates:
     sum_x = 0
     sum_y = 0
     for tile in tiles:
-        sum_x += tile.coordinates.x
-        sum_y += tile.coordinates.y
+        sum_x += tile.x
+        sum_y += tile.y
     
     center_coords = Coordinates(math.floor(sum_x / len(tiles)), math.floor(sum_y / len(tiles)))
     # if context.tiles[Coordinates(*center_coords)].country != context.my_country:

@@ -122,6 +122,7 @@ class MyStrategicApi(StrategicApi):
                 tanks_to_remove.add(tank_id)
         
         for builder_id, piece_type in builder_to_piece_type.items():
+            self.log(f"builder {builder_id} is building piece type {piece_type}")
             builder: Builder = self.context.my_pieces.get(builder_id)
             if builder is None:
                 builders_to_remove.add(builder_id)
@@ -177,6 +178,8 @@ class MyStrategicApi(StrategicApi):
     
     def build_piece(self, piece, piece_type):
         builder: Builder = self.context.my_pieces[piece.id]
+        self.log(f"builder {builder.id} received command to build {piece_type}")
+        self.log(f"builder {builder.id} has {builder.money} money")
         if not builder or builder.type != 'builder':
             return None
 
@@ -211,6 +214,7 @@ class MyStrategicApi(StrategicApi):
     def collect_money(self, piece, amount):
         # add function if not added
         builder: Builder = self.context.my_pieces[piece.id]
+        self.log(f"builder {builder.id} is collecting money")
         if not builder or builder.type != 'builder':
             return None
 

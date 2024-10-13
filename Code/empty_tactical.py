@@ -6,13 +6,14 @@ tank_to_attacking_command = {}
 commands = []
 
 
-def move_tank_to_destination(tank, dest):
+def move_tank_to_destination(tank, dest, context):
     """Returns True if the tank's mission is complete."""
     command_id = tank_to_attacking_command[tank.id]
     if dest is None:
         commands[int(command_id)] = CommandStatus.failed(command_id)
         return
     tank_coordinate = tank.tile.coordinates
+    tile = context.tiles[(tank_coordinate.x, tank_coordinate.y)]
     if dest.x < tank_coordinate.x:
         new_coordinate = common_types.Coordinates(tank_coordinate.x - 1, tank_coordinate.y)
     elif dest.x > tank_coordinate.x:
@@ -26,6 +27,13 @@ def move_tank_to_destination(tank, dest):
         commands[int(command_id)] = CommandStatus.success(command_id)
         del tank_to_attacking_command[tank.id]
         return True
+    if tile.country != context.my_country:
+        tank.attack()
+        prev_command = commands[int(command_id)]
+        commands[int(command_id)] = CommandStatus.in_progress(command_id,
+                                                          prev_command.elapsed_turns + 1,
+                                                          prev_command.estimated_turns - 1)
+        return False
     tank.move(new_coordinate)
     prev_command = commands[int(command_id)]
     commands[int(command_id)] = CommandStatus.in_progress(command_id,
@@ -43,7 +51,7 @@ class MyStrategicApi(StrategicApi):
             if tank is None:
                 to_remove.add(tank_id)
                 continue
-            if move_tank_to_destination(tank, destination):
+            if move_tank_to_destination(tank, destination, self.context):
                 to_remove.add(tank_id)
         for tank_id in to_remove:
             del tank_to_coordinate_to_attack[tank_id]

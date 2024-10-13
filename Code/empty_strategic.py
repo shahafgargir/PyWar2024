@@ -10,7 +10,7 @@ UNCLAIMED_TILE = 1
 ENEMY_TILE = 2
 
 builder_built_builder = {}
-
+attack_list = set()
 def mass_center_of_our_territory(strategic: StrategicApi) -> Coordinates:
     our_area = 0
     x_sum = 0
@@ -57,13 +57,23 @@ def get_tile_to_attack(strategic: StrategicApi, center: Coordinates, tank_tile: 
 
         if len(possible_tiles) != 0:
             possible_tiles.sort(key = lambda c : distance(c, center))
-            return possible_tiles[0]
+            for tile in possible_tiles:
+                if tile in attack_list and random.randrange(2) == 0:
+                    continue
+                else: 
+
+                    return tile
+            return random.choice(possible_tiles)
+        
+
+
         else:
             radius += 1
             possible_tiles = []
 
 
 def do_turn(strategic: StrategicApi):
+    attack_list.clear()
 
     attacking_pieces: dict[BasePiece, str] = strategic.report_attacking_pieces()
 

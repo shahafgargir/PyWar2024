@@ -2,6 +2,10 @@ import random
 
 import common_types
 
+OUR_TILE = 0
+UNCLAIMED_TILE = 1
+ENEMY_TILE = 2
+
 builder_built_builder = {}
 
 def mass_center_of_our_territory(strategic):
@@ -26,21 +30,33 @@ def mass_center_of_our_territory(strategic):
 
     
 
-def get_sorted_tiles_for_attack(strategic):
-    unclaimed_tiles = []
-    enemy_tiles = []
-    for x in range(strategic.get_game_width()):
-        for y in range(strategic.get_game_height()):
-            coordinate = common_types.Coordinates(x, y)
-            danger = strategic.estimate_tile_danger(coordinate)
-            if danger == 1:
-                unclaimed_tiles.append(coordinate)
-            elif danger == 2:
-                enemy_tiles.append(coordinate)
+def get_ring_of_radius(strategic, tile, r):
+    ret = []
+    x, y = tile.x, tile.y
+    for i in range(-r, r+1):
+        for j in range(-r, r+1):
+            t = common_types.Coordinates((x+i) % strategic.get_game_width(), (y+j) % strategic.get_game_height())
+            if common_types.distance(t, tile) == r:
+                ret.append(t)
+    return ret
 
-    random.shuffle(unclaimed_tiles)
-    random.shuffle(enemy_tiles)
-    return enemy_tiles + unclaimed_tiles
+
+def get_tile_to_attack(strategic, center, tank_coord):
+    radius = 1
+    possible_tiles = []
+    while True:
+        if radius >= 100:
+            return None # everything is ours, long live Shahaf the king
+        for tile in get_ring_of_radius(strategic, tank_coord, radius):
+            if strategic.estimate_tile_danger(tile) != OUR_TILE:
+                possible_tiles.append(tile)
+
+            if len(possible_tiles) != 0:
+                possible_tiles.sort(key = lambda c : common_types.distance(c, center))
+                return possible_tiles[0]
+            else:
+                radius += 1
+                possible_tiles = []
 
 
 def do_turn(strategic):

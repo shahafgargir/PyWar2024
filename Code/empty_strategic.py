@@ -66,7 +66,7 @@ def do_turn(strategic):
     for piece, command_id in attacking_pieces.items():
         if command_id is not None:
             continue
-        strategic.attack(piece, get_tile_to_attack(strategic, mass_center_of_our_territory(), piece.tile), 1)
+        strategic.attack(piece, get_tile_to_attack(strategic, mass_center_of_our_territory(strategic), piece.tile), 1)
 
     builders : dict = strategic.report_builders()
 

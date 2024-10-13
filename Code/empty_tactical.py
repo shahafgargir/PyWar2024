@@ -1,7 +1,4 @@
 import common_types
-from common_types import Coordinates
-from strategic_api import CommandStatus, StrategicApi, StrategicPiece
-from tactical_api import Tank, Builder, TurnContext, distance, Tile
 import math
 import random
 

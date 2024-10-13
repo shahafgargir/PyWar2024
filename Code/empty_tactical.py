@@ -13,7 +13,7 @@ builder_to_building_command = {}
 builder_to_piece_type = {}
 
 commands = []
-price_per_piece = {'tank': 8, 'builder': 20}
+price_per_piece = {'tank': 8, 'builder': 20, 'artillery': 8, 'antitank': 10}
 
 builder_chosen_tiles = set()
 
@@ -127,6 +127,10 @@ def builder_do_work(context: TurnContext, builder: Builder, piece_type: str):
                 builder.build_tank()
             elif piece_type == 'builder':
                 builder.build_builder()
+            elif piece_type == 'artillery':
+                builder.build_artillery()
+            elif piece_type == 'antitank':
+                builder.build_antitank()
             commands[int(command_id)] = CommandStatus.success(command_id)
             del builder_to_building_command[builder.id]
             return True

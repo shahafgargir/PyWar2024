@@ -54,7 +54,6 @@ def builder_get_tile_with_money(context: TurnContext, builder: Builder) -> Tile:
     coords = builder.tile.coordinates
     for radius in range(1, 4):
         maxtile : Tile = None
-        context.log(f"coords: {coords}")
         tiles = get_tile_ring(context, coords, radius)
         for tile in tiles:
             if tile.country != context.my_country:
@@ -105,7 +104,6 @@ def move_tank_to_destination(tank: Tank, dest, context):
     return False
 
 def builder_collect_money(context: TurnContext, builder: Builder):
-    context.log(f"builder {builder.id} is collecting money")
     if not builder or builder.type != 'builder':
         return None
 
@@ -114,6 +112,9 @@ def builder_collect_money(context: TurnContext, builder: Builder):
     else:
         destination = builder_get_tile_with_money(context, builder)
         step = get_step_to_destination(builder.tile.coordinates, destination.coordinates)
+        context.log(str(step))
+        context.log(str(destination))
+        context.log(str(builder.tile.coordinates))
         builder.move(step)
 
 def builder_do_work(context: TurnContext, builder: Builder, piece_type: str):
@@ -146,7 +147,6 @@ class MyStrategicApi(StrategicApi):
                 tanks_to_remove.add(tank_id)
         
         for builder_id, piece_type in builder_to_piece_type.items():
-            self.log(f"builder {builder_id} is building piece type {piece_type}")
             builder: Builder = self.context.my_pieces.get(builder_id)
             if builder is None:
                 builders_to_remove.add(builder_id)
@@ -203,7 +203,6 @@ class MyStrategicApi(StrategicApi):
     def build_piece(self, piece, piece_type):
         builder: Builder = self.context.my_pieces[piece.id]
         self.log(f"builder {builder.id} received command to build {piece_type}")
-        self.log(f"builder {builder.id} has {builder.money} money")
         if not builder or builder.type != 'builder':
             return None
 

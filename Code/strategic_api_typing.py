@@ -3,7 +3,7 @@ import collections
 
 from common_types import Coordinates
 
-from Code.tactical_api_typing import TurnContext
+from tactical_api_typing import TurnContext
 
 StrategicPiece = collections.namedtuple('StrategicPiece', ['id', 'type'])
 

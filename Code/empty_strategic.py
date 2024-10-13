@@ -50,18 +50,24 @@ def get_tile_to_attack(strategic: StrategicApi, center: Coordinates, tank_tile: 
     radius = 1
     possible_tiles: list[Coordinates] = []
     while True:
-        if radius >= 100:
-            return None # everything is ours, long live Shahaf the king
+        if radius >= 50:
+            possible_tiles = get_ring_of_radius(strategic, tank_tile, 10)
+            possible_tiles.sort(key = lambda c : distance(c, center), reverse=True)
+            return possible_tiles[0]
+        
         for tile in get_ring_of_radius(strategic, tank_tile, radius):
             if piece.type == "tank":
                 if strategic.estimate_tile_danger(tile) != OUR_TILE:
                     possible_tiles.append(tile)
             elif piece.type == "antitank":
-                if strategic.estimate_tile_danger(tile) != ENEMY_TANK:
+                if strategic.estimate_tile_danger(tile) == ENEMY_TANK:
                     possible_tiles.append(tile)
-
+                
         if len(possible_tiles) != 0:
-            possible_tiles.sort(key = lambda c : distance(c, center))
+            if piece.type == "antitank":
+                possible_tiles.sort(key = lambda c : distance(c, center), reverse=True)
+            elif piece.type == "tank":
+                possible_tiles.sort(key = lambda c : distance(c, center))   
             for tile in possible_tiles:
                 if tile in attack_list:
                     continue

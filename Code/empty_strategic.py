@@ -91,7 +91,7 @@ def do_turn(strategic: StrategicApi):
 
     builders : dict[BasePiece, str] = strategic.report_builders()
 
-    MAX_BUILDERS = 7
+    MAX_BUILDERS = 10
     if strategic.get_game_height() < 15:
         MAX_BUILDERS = 3
 

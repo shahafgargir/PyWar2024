@@ -4,8 +4,7 @@ from strategic_api import CommandStatus, StrategicApi, StrategicPiece
 tank_to_coordinate_to_attack = {}
 tank_to_attacking_command = {}
 commands = []
-
-
+price_per_piece = {'tank': 8, 'builder': 20}
 def move_tank_to_destination(tank, dest, context):
     """Returns True if the tank's mission is complete."""
     command_id = tank_to_attacking_command[tank.id]
@@ -92,7 +91,18 @@ class MyStrategicApi(StrategicApi):
         return {StrategicPiece(piece_id, piece.type) : tank_to_attacking_command.get(piece_id)
                 for piece_id, piece in self.context.my_pieces.items()
                 if piece.type == 'tank'}
-
+    def build_piece(self, builder, piece_type):
+        if price_per_piece[piece_type] <= builder.money:
+            if piece_type == 'tank':
+                builder.build_tank()
+                return True
+            elif piece_type == 'builder':
+                builder.build_builder()
+                return True
+            else:
+                return False
+        else:
+            self.collect_money(builder, price_per_piece[piece_type] - builder.money)
 
 def get_strategic_implementation(context):
     return MyStrategicApi(context)

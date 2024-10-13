@@ -55,12 +55,12 @@ def get_tile_to_attack(strategic: StrategicApi, center: Coordinates, tank_tile: 
             if strategic.estimate_tile_danger(tile) != OUR_TILE:
                 possible_tiles.append(tile)
 
-            if len(possible_tiles) != 0:
-                possible_tiles.sort(key = lambda c : distance(c, center))
-                return possible_tiles[0]
-            else:
-                radius += 1
-                possible_tiles = []
+        if len(possible_tiles) != 0:
+            possible_tiles.sort(key = lambda c : distance(c, center))
+            return possible_tiles[0]
+        else:
+            radius += 1
+            possible_tiles = []
 
 
 def do_turn(strategic: StrategicApi):

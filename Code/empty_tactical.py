@@ -48,10 +48,10 @@ def get_tile_ring(context: TurnContext, coords: Coordinates, radius: int) -> lis
     return retval
 
 
-def builder_get_tile_with_money(context: TurnContext, builder: Builder) -> Tile | None:
+def builder_get_tile_with_money(context: TurnContext, builder: Builder) -> Tile:
     coords = builder.tile.coordinates
     for radius in range(1, 4):
-        maxtile : None | Tile = None
+        maxtile : Tile = None
         tiles = get_tile_ring(context, coords, radius)
         for tile in tiles:
             if tile.country != context.my_country:

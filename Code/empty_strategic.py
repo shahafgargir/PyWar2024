@@ -92,6 +92,7 @@ def get_tile_to_attack(strategic: StrategicApi, center: Coordinates, tank_tile: 
 
 
 def do_turn(strategic: StrategicApi):
+    global num_of_pieces_built
     attack_list.clear()
 
     attacking_pieces: dict[BasePiece, str] = strategic.report_attacking_pieces()
@@ -129,6 +130,5 @@ def do_turn(strategic: StrategicApi):
             strategic.build_piece(builder, "tank")
         
         num_of_pieces_built += 1
-        builder_to_pieces_built[builder.id] += 1
 
 

@@ -12,7 +12,7 @@ ENEMY_TANK = 3
 ENEMY_ARTILLERY = 4
 ENEMY_ANTITANK = 5
 
-BUILDER_PER_MONEY = 0.01
+BUILDER_PER_MONEY = 0.005
 
 builder_built_builder = set()
 builder_to_pieces_built = {}

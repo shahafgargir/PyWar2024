@@ -10,49 +10,86 @@ import tarfile
 import urllib.parse
 
 TIMEOUT = 10
-AUTHENTICATIO_REQUEST_HEADERS = {
-    'Content-type': 'application/x-www-form-urlencoded'
-}
-BOUNDARY = b'wL36Yn8afVp8Ag7AmP8qZ0SA4n1v9T'
+AUTHENTICATIO_REQUEST_HEADERS = {"Content-type": "application/x-www-form-urlencoded"}
+BOUNDARY = b"wL36Yn8afVp8Ag7AmP8qZ0SA4n1v9T"
 UPLOAD_REQUEST_HEADERS = {
-    'Content-type': 'multipart/form-data; boundary={}'.format(BOUNDARY)
+    "Content-type": "multipart/form-data; boundary={}".format(BOUNDARY)
 }
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Upload code to PyWar.')
-    parser.add_argument('-d', '--directory', metavar='DIR', type=str, required=True,
-                        help='Directory to upload.')
-    parser.add_argument('-n', '--name', metavar='NAME', type=str, required=True,
-                        help='Code name in PyWar.')
-    parser.add_argument('-s', '--server', metavar='SERVER', type=str, default='pywar.ddns.net',
-                        help='PyWar server for uploading this code to.')
-    parser.add_argument('-p', '--port', metavar='PORT', type=int, required=True,
-                        help='PyWar server port.')
-    parser.add_argument('--tactical-module', metavar='MODULE', type=str, required=True,
-                        help='Tactical implementation module name.')
-    parser.add_argument('--strategic-module', metavar='MODULE', type=str, required=True,
-                        help='Strategic implementation module name.')
-    parser.add_argument('--password', metavar='PASSWORD', type=str, default=None,
-                        help='Password for logging in to the server')
+    parser = argparse.ArgumentParser(description="Upload code to PyWar.")
+    parser.add_argument(
+        "-d",
+        "--directory",
+        metavar="DIR",
+        type=str,
+        default="./Code",
+        help="Directory to upload.",
+    )
+    parser.add_argument(
+        "-n",
+        "--name",
+        metavar="NAME",
+        type=str,
+        required=True,
+        help="Code name in PyWar.",
+    )
+    parser.add_argument(
+        "-s",
+        "--server",
+        metavar="SERVER",
+        type=str,
+        default="pywar.ddns.net",
+        help="PyWar server for uploading this code to.",
+    )
+    parser.add_argument(
+        "-p",
+        "--port",
+        metavar="PORT",
+        type=int,
+        default=4444,
+        help="PyWar server port.",
+    )
+    parser.add_argument(
+        "--tactical-module",
+        metavar="MODULE",
+        type=str,
+        default="empty_tactical",
+        help="Tactical implementation module name.",
+    )
+    parser.add_argument(
+        "--strategic-module",
+        metavar="MODULE",
+        type=str,
+        default="empty_strategic",
+        help="Strategic implementation module name.",
+    )
+    parser.add_argument(
+        "--password",
+        metavar="PASSWORD",
+        type=str,
+        default="%4M>q$`%Z$9-\\*1K0(Wn",
+        help="Password for logging in to the server",
+    )
     return parser.parse_args()
 
 
 def add_directory_to_tarball(tarball, directory, base_dir=None):
-    for filename in os.listdir(directory):
-        if filename in ["strategic_api.py", "tactical_api.py", "common_types.py"]:
-            continue
+    for filename in ["empty_strategic.py", "empty_tactical.py"]:
         real_path = os.path.join(directory, filename)
         if base_dir is None:
             arcfilename = filename
         else:
-            arcfilename = '/'.join([base_dir, filename])
+            arcfilename = "/".join([base_dir, filename])
         if os.path.isfile(real_path):
             tarball.add(real_path, arcfilename)
         elif os.path.isdir(real_path):
             add_directory_to_tarball(tarball, real_path, arcfilename)
         else:
-            print('Ignoring', filename, 'for it is not recognized as a file or directory')
+            print(
+                "Ignoring", filename, "for it is not recognized as a file or directory"
+            )
 
 
 def get_password(args):
@@ -66,62 +103,66 @@ def get_ssl_context():
 
 
 def authenticate(args):
-    encoded_password = urllib.parse.quote(get_password(args), safe='')
-    body = f'password={encoded_password}'
+    encoded_password = urllib.parse.quote(get_password(args), safe="")
+    body = f"password={encoded_password}"
 
-    conn = http.client.HTTPSConnection(args.server, args.port, timeout=TIMEOUT, context=get_ssl_context())
-    conn.request('POST', '/login', body, AUTHENTICATIO_REQUEST_HEADERS)
+    conn = http.client.HTTPSConnection(
+        args.server, args.port, timeout=TIMEOUT, context=get_ssl_context()
+    )
+    conn.request("POST", "/login", body, AUTHENTICATIO_REQUEST_HEADERS)
     response = conn.getresponse()
-    return response.getheader('Set-Cookie')
+    return response.getheader("Set-Cookie")
 
 
 def upload_file(args, cookie):
     form_data = {
-        'tactical': args.tactical_module,
-        'strategic': args.strategic_module,
-        'overwrite': 'on',
-        'name': args.name,
+        "tactical": args.tactical_module,
+        "strategic": args.strategic_module,
+        "overwrite": "on",
+        "name": args.name,
     }
 
-    body = b''
+    body = b""
     for k, v in form_data.items():
-        body += '--{}\n'.format(BOUNDARY).encode('utf8')
-        body += 'Content-Disposition: form-data; name="{}"\n'.format(k).encode('utf8')
-        body += '\n{}\n'.format(v).encode('utf8')
+        body += "--{}\n".format(BOUNDARY).encode("utf8")
+        body += 'Content-Disposition: form-data; name="{}"\n'.format(k).encode("utf8")
+        body += "\n{}\n".format(v).encode("utf8")
 
-    body += '--{}\n'.format(BOUNDARY).encode('utf8')
+    body += "--{}\n".format(BOUNDARY).encode("utf8")
     body += b'Content-Disposition: form-data; name="tarball"; filename="code.tar.gz"'
-    body += b'Content-Type: application/tar+gzip\n'
+    body += b"Content-Type: application/tar+gzip\n"
 
     inmemory_tar = io.BytesIO()
-    with tarfile.open(fileobj=inmemory_tar, mode='w:gz') as tarball:
+    with tarfile.open(fileobj=inmemory_tar, mode="w:gz") as tarball:
         add_directory_to_tarball(tarball, args.directory)
 
-    body += b'\n'
+    body += b"\n"
     body += inmemory_tar.getbuffer()
-    body += b'\n'
-    body += '--{}--\n'.format(BOUNDARY).encode('utf8')
+    body += b"\n"
+    body += "--{}--\n".format(BOUNDARY).encode("utf8")
 
-    headers = {'Cookie': cookie}
+    headers = {"Cookie": cookie}
     headers.update(UPLOAD_REQUEST_HEADERS)
 
-    conn = http.client.HTTPSConnection(args.server, args.port, timeout=TIMEOUT, context=get_ssl_context())
-    conn.request('POST', '/code/upload', body, headers)
+    conn = http.client.HTTPSConnection(
+        args.server, args.port, timeout=TIMEOUT, context=get_ssl_context()
+    )
+    conn.request("POST", "/code/upload", body, headers)
     response = conn.getresponse()
     if response.status != 302:
-        print('Failure:', response.status, response.reason, file=sys.stderr)
+        print("Failure:", response.status, response.reason, file=sys.stderr)
     else:
-        print('Success')
+        print("Success")
 
 
 def main(args):
     cookie = authenticate(args)
     if not cookie:
-        print('Invalid password', file=sys.stderr)
+        print("Invalid password", file=sys.stderr)
     else:
         upload_file(args, cookie)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     args = parse_args()
     main(args)

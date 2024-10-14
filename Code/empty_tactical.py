@@ -86,8 +86,6 @@ def mass_center_of_our_territory(context: TurnContext) -> Coordinates:
     return mass_center
 
 def get_step_to_destination(start: Coordinates, destination: Coordinates):
-    start = Coordinates(*start)
-    destination = Coordinates(*destination)
     if destination.x < start.x:
         return common_types.Coordinates(start.x - 1, start.y)
     elif destination.x > start.x:
@@ -107,7 +105,7 @@ def get_ring_of_radius(context: TurnContext, coords: Coordinates, r: int) -> lis
         for j in range(-r, r+1):
             t = common_types.Coordinates((x+i) % context.game_width, (y+j) % context.game_height)
             if common_types.distance(t, coords) == r:
-                ret.append(context.tiles[t])
+                ret.append(Coordinates(*context.tiles[t]))
     
     return ret
 
@@ -288,7 +286,7 @@ def move_x_steps_to_destination(start: Coordinates, dest: Coordinates, x: int) -
 
 # If there is a conqured tile, move to it - otherwise - move 8 tiles towards this destination.
 def move_airplane_to_destination(airplane: Airplane, dest: Coordinates):
-    end = move_x_steps_to_destination(Coordinates(*airplane.tile.coordinates), dest, airplane_speed)
+    end = move_x_steps_to_destination(airplane.tile.coordinates, dest, airplane_speed)
     airplane.move(end)
 
 def builder_collect_money(context: TurnContext, builder: Builder):
@@ -388,7 +386,8 @@ class MyStrategicApi(StrategicApi):
                     found_new_dest = False
                     for tile in get_ring_of_radius(self.context, airplane.tile.coordinates, 1):
                         if tile.country != self.context.my_country:
-                            destination = Coordinates(*tile.coordinates)
+                            destination = tile.coordinates
+                            airplane_to_coordinate_to_attack[airplane_id] = destination
                             found_new_dest = True
                             break
                     
@@ -396,6 +395,7 @@ class MyStrategicApi(StrategicApi):
                         # Mark command as done.
                         commands[int(command_id)] = CommandStatus.success(command_id)
             else:
+                self.context.log(f"log1: {destination=}")
                 move_airplane_to_destination(airplane, destination)
         
         for antitank_id, destination in antitank_to_coordinate_to_attack.items():

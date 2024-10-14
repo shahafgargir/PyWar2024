@@ -82,9 +82,8 @@ def builder_get_tile_with_money(context: TurnContext, builder: Builder) -> Tile:
     for radius, tiles_at_radius in tile_map.items():
 
         for tile in tiles_at_radius:
-            context.log(f"radius: {radius}")
-            context.log(f"tile: {tile}")
-            context.log(f"tile.money: {tile.money}")
+            if tile.money is None:
+                continue
             tile_money = tile.money - 5*(radius - 1)
             if tile.country != context.my_country:
                 continue

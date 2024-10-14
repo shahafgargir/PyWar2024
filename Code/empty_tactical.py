@@ -27,6 +27,23 @@ builder_chosen_tiles = set()
 
 builder_money_taken: dict[Coordinates, list[int]] = {}
 
+def is_border(context: TurnContext, tile: Tile) -> bool:
+    x, y = tile.coordinates
+
+    if x > 0 and context.tiles[Coordinates(x - 1, y)].country != context.my_country:
+        return True
+
+    if y > 0 and context.tiles[Coordinates(x, y - 1)].country != context.my_country:
+        return True
+
+    if x < context.game_width - 1 and context.tiles[Coordinates(x + 1, y)].country != context.my_country:
+        return True
+
+    if y < context.game_height - 1 and context.tiles[Coordinates(x, y + 1)].country != context.my_country:
+        return True
+
+    return False
+
 def mass_center_of_our_territory(context: TurnContext) -> Coordinates:
     our_area = 0
     x_sum = 0
@@ -75,9 +92,6 @@ def get_tile_map(context: TurnContext, coords: Coordinates) -> dict[int, list[Ti
     del ret[0]
     
     return ret
-
-
-
 
 def builder_get_tile_with_money(context: TurnContext, builder: Builder) -> Tile:
     coords = builder.tile.coordinates
@@ -388,20 +402,31 @@ class MyStrategicApi(StrategicApi):
 
     def estimate_tile_danger(self, destination):
         tile = self.context.tiles[Coordinates(destination.x, destination.y)]
+
+        flag = 0
+
         if any([piece.type == 'antitank' for piece in tile.pieces]):
-            return 5
-        elif any([piece.country != self.context.my_country for piece in tile.pieces]):
-            if any([piece.type == 'artillery' and piece.country != self.context.my_country for piece in tile.pieces]):
-                return 4
-            elif any([piece.type == 'builder' and piece.country != self.context.my_country for piece in tile.pieces]):
-                return -1
-            return 3
-        elif tile.country == self.context.my_country:
-            return 0
-        elif tile.country is None:
-            return 1
-        else:   # Enemy country
-            return 2
+            flag += 1
+
+        if any([piece.type == 'artillery' and piece.country != self.context.my_country for piece in tile.pieces]):
+            flag += 2
+
+        if any([piece.type == 'builder' and piece.country != self.context.my_country for piece in tile.pieces]):
+            flag += 4
+
+        if any([piece.country != self.context.my_country for piece in tile.pieces]):
+            flag += 8
+
+        if tile.country == self.context.my_country:
+            flag += 16
+
+        if tile.country is None:
+            flag += 32
+
+        if tile.country == self.context.my_country and is_border(self.context, tile):
+            flag += 64
+
+        return flag
 
     def get_game_height(self):
         return self.context.game_height

@@ -1,6 +1,6 @@
 import common_types
 from common_types import Coordinates
-from tactical_api import Tank, Antitank, Builder, TurnContext, distance, Tile, Artillery
+from tactical_api import Tank, Antitank, Builder, TurnContext, distance, Tile, Artillery, IronDome
 from strategic_api import CommandStatus, StrategicPiece
 from strategic_api import StrategicApi
 import math
@@ -21,11 +21,31 @@ artillery_to_coordinate_to_attack: dict[str, tuple[Coordinates, int]] = {}
 
 
 commands = []
-price_per_piece = {'tank': 8, 'builder': 20, 'artillery': 8, 'antitank': 10}
+price_per_piece = {'tank': 8, 'builder': 20, 'artillery': 8, 'antitank': 10, 'iron_dome': 32, 'plane': 20, 'satellite': 64}
 
 builder_chosen_tiles = set()
 
 builder_money_taken: dict[Coordinates, list[int]] = {}
+
+def is_border(context: TurnContext, tile: Tile) -> bool:
+    x, y = tile.coordinates
+
+    if tile.country != context.my_country:
+        return False
+
+    if x > 0 and context.tiles[Coordinates(x - 1, y)].country != context.my_country:
+        return True
+
+    if y > 0 and context.tiles[Coordinates(x, y - 1)].country != context.my_country:
+        return True
+
+    if x < context.game_width - 1 and context.tiles[Coordinates(x + 1, y)].country != context.my_country:
+        return True
+
+    if y < context.game_height - 1 and context.tiles[Coordinates(x, y + 1)].country != context.my_country:
+        return True
+
+    return False
 
 def mass_center_of_our_territory(context: TurnContext) -> Coordinates:
     our_area = 0
@@ -75,9 +95,6 @@ def get_tile_map(context: TurnContext, coords: Coordinates) -> dict[int, list[Ti
     del ret[0]
     
     return ret
-
-
-
 
 def builder_get_tile_with_money(context: TurnContext, builder: Builder) -> Tile:
     coords = builder.tile.coordinates
@@ -381,24 +398,41 @@ class MyStrategicApi(StrategicApi):
                 artillery_to_coordinate_to_attack[piece.id] = (destination, radius)
                 artillery_to_attacking_command[piece.id] = command_id
                 commands.append(attacking_command)
+            if piece.type == "iron_dome":
+                iron_dome: IronDome = self.context.my_pieces[piece.id]
+                iron_dome.turn_on_protection()
 
 
     def estimate_tile_danger(self, destination):
         tile = self.context.tiles[Coordinates(destination.x, destination.y)]
+
+        flag = 0
+
         if any([piece.type == 'antitank' for piece in tile.pieces]):
-            return 5
-        elif any([piece.country != self.context.my_country for piece in tile.pieces]):
-            if any([piece.type == 'artillery' and piece.country != self.context.my_country for piece in tile.pieces]):
-                return 4
-            elif any([piece.type == 'builder' and piece.country != self.context.my_country for piece in tile.pieces]):
-                return -1
-            return 3
-        elif tile.country == self.context.my_country:
-            return 0
-        elif tile.country is None:
-            return 1
-        else:   # Enemy country
-            return 2
+            flag += 1
+
+        if any([piece.type == 'artillery' and piece.country != self.context.my_country for piece in tile.pieces]):
+            flag += 2
+
+        if any([piece.type == 'builder' and piece.country != self.context.my_country for piece in tile.pieces]):
+            flag += 4
+
+        if any([piece.country != self.context.my_country for piece in tile.pieces]):
+            flag += 8
+
+        if tile.country == self.context.my_country:
+            flag += 16
+
+        if tile.country is None:
+            flag += 32
+
+        if is_border(self.context, tile):
+            flag += 64
+
+        if any([piece.type == 'tank' and piece.country != self.context.my_country for piece in tile.pieces]):
+            flag += 128
+
+        return flag
 
     def get_game_height(self):
         return self.context.game_height

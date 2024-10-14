@@ -105,7 +105,9 @@ def do_turn(strategic: StrategicApi):
 
     builders : dict[BasePiece, str] = strategic.report_builders()
 
-    MAX_BUILDERS = strategic.get_total_country_tiles_money() / 100
+    total_money_in_teritorry = strategic.get_total_country_tiles_money()
+    strategic.log(f"{total_money_in_teritorry=}")
+    MAX_BUILDERS =  total_money_in_teritorry/ 100
 
     for builder in builders.keys():
         if builders[builder] is not None:

@@ -105,7 +105,7 @@ def get_ring_of_radius(context: TurnContext, coords: Coordinates, r: int) -> lis
         for j in range(-r, r+1):
             t = common_types.Coordinates((x+i) % context.game_width, (y+j) % context.game_height)
             if common_types.distance(t, coords) == r:
-                ret.append(Coordinates(*context.tiles[t]))
+                ret.append(context.tiles[t])
     
     return ret
 

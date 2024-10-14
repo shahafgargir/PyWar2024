@@ -127,7 +127,7 @@ def move_artillery(strategic: StrategicApi, attacking_pieces: dict[BasePiece,str
             strategic.attack({StrategicPiece(piece.id, piece.type)},tile_to_attack.coordinates, 1)
     else:
         tile_to_attack = get_tile_to_attack(strategic, mass_center_of_our_territory(strategic), piece.tile, piece)
-        strategic.attack({StrategicPiece(piece.id, piece.type)},tile_to_attack, 3 if artillery_attack[piece.id] else 1)
+        strategic.attack({StrategicPiece(piece.id, piece.type)},tile_to_attack, 1)
 
 
 def do_turn(strategic: StrategicApi):

@@ -86,6 +86,8 @@ def mass_center_of_our_territory(context: TurnContext) -> Coordinates:
     return mass_center
 
 def get_step_to_destination(start: Coordinates, destination: Coordinates):
+    start = Coordinates(*start)
+    destination = Coordinates(*destination)
     if destination.x < start.x:
         return common_types.Coordinates(start.x - 1, start.y)
     elif destination.x > start.x:

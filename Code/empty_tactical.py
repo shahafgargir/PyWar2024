@@ -1,6 +1,6 @@
 import common_types
 from common_types import Coordinates
-from tactical_api import Tank, Antitank, Builder, TurnContext, distance, Tile, Artillery
+from tactical_api import Tank, Antitank, Builder, TurnContext, distance, Tile, Artillery, IronDome
 from strategic_api import CommandStatus, StrategicPiece
 from strategic_api import StrategicApi
 import math
@@ -381,6 +381,9 @@ class MyStrategicApi(StrategicApi):
                 artillery_to_coordinate_to_attack[piece.id] = (destination, radius)
                 artillery_to_attacking_command[piece.id] = command_id
                 commands.append(attacking_command)
+            if piece.type == "iron_dome":
+                iron_dome: IronDome = self.context.my_pieces[piece.id]
+                iron_dome.turn_on_protection()
 
 
     def estimate_tile_danger(self, destination):

@@ -103,8 +103,10 @@ def do_turn(strategic: StrategicApi):
         if piece.type == "artillery":
             tile_to_attack = get_tile_to_attack(strategic, mass_center_of_our_territory(strategic), piece.tile, piece)
             strategic.attack({StrategicPiece(piece.id, piece.type)},tile_to_attack, 3 if artillery_attack[piece.id] else 1)
-        else:
+        elif piece.type == "antitank" or piece.type == "tank":
             strategic.attack({StrategicPiece(piece.id, piece.type)}, get_tile_to_attack(strategic, mass_center_of_our_territory(strategic), piece.tile, piece), 1)
+        elif piece.type == "iron_dome":
+            strategic.attack({StrategicPiece(piece.id, piece.type)}, piece.tile.coordinates, 0)
 
     builders : dict[BasePiece, str] = strategic.report_builders()
 

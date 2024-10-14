@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - upload
+      - upload2
+      - upload3
 
 jobs:
   run_script:

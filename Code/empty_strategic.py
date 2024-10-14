@@ -81,7 +81,8 @@ def get_tile_to_attack(strategic: StrategicApi, center: Coordinates, tank_tile: 
         else:
             if piece.type == "artillery":
                 artillery_attack[piece.id] = False
-        strategic.log(f"piece: {piece.type=} {radius=} possible_tiles amnt: {len(possible_tiles)}")
+        if piece.type == "tank":
+            strategic.log(f"piece: {piece.type=} {radius=} possible_tiles amnt: {len(possible_tiles)}")
         if len(possible_tiles) == 0:
             radius += 1
             possible_tiles = []

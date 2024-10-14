@@ -16,6 +16,8 @@ builder_built_builder = set()
 builder_to_pieces_built = {}
 attack_list = set()
 artillery_attack = {}
+num_of_pieces_built = 0
+
 def mass_center_of_our_territory(strategic: StrategicApi) -> Coordinates:
     our_area = 0
     x_sum = 0
@@ -117,13 +119,16 @@ def do_turn(strategic: StrategicApi):
         if len(builders) < MAX_BUILDERS:
             strategic.build_piece(builder, "builder")
             builder_built_builder.add(builder.id)
-        elif builder_to_pieces_built[builder.id] % 5 == 0:
+        elif num_of_pieces_built % 5 == 0:
             strategic.build_piece(builder, "antitank")
-        elif builder_to_pieces_built[builder.id] % 5 == 4:
+        elif num_of_pieces_built % 5 == 4:
             strategic.build_piece(builder, "artillery")
+        elif num_of_pieces_built % 20 == 1:
+            strategic.build_piece(builder, "iron_dome")
         else:
             strategic.build_piece(builder, "tank")
-
+        
+        num_of_pieces_built += 1
         builder_to_pieces_built[builder.id] += 1
 
 

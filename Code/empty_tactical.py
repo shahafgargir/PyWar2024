@@ -27,6 +27,15 @@ builder_chosen_tiles = set()
 
 builder_money_taken: dict[Coordinates, list[int]] = {}
 
+def iron_dome_distances(context: TurnContext, iron_dome: IronDome):
+    iron_domes = [piece for piece in context.my_pieces if piece.type == 'iron_dome']
+    distances = [(other, distance(iron_dome.tile.coordinates, other.tile.coordinates)) for other in iron_domes if other != iron_dome]
+    return sorted(distances, key=lambda t: t[1])
+
+def closest_border(context: TurnContext, piece: BasePiece) -> tuple(Tile, int):
+    borders = [(tile, distance(piece.tile.coordinates, tile.coordinates)) for tile in context.my_tiles if is_border(tile)]
+    return sorted(borders, key=lambda t: t[1])[0]
+
 def is_border(context: TurnContext, tile: Tile) -> bool:
     x, y = tile.coordinates
 
@@ -400,7 +409,23 @@ class MyStrategicApi(StrategicApi):
                 commands.append(attacking_command)
             if piece.type == "iron_dome":
                 iron_dome: IronDome = self.context.my_pieces[piece.id]
-                iron_dome.turn_on_protection()
+                if not iron_dome or iron_dome.type != 'iron_dome':
+                    return None
+
+                acted = False
+
+                if closest_border(self.context, iron_dome)[1] > 7:
+                    if iron_dome.is_defending:
+                        iron_dome.turn_off_protection()
+                        acted = True
+
+                if closest_border(self.context, iron_dome)[1] <= 3:
+                    if not iron_dome.is_defending:
+                        iron_dome.turn_on_protection()
+                    acted = True
+
+                if not acted:
+                    iron_dome.move(get_step_to_destination(iron_dome.tile.coordinates, closest_border(iron_dome)[1]))
 
 
     def estimate_tile_danger(self, destination):

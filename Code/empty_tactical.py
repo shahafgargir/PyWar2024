@@ -286,7 +286,7 @@ def move_x_steps_to_destination(start: Coordinates, dest: Coordinates, x: int) -
 
 # If there is a conqured tile, move to it - otherwise - move 8 tiles towards this destination.
 def move_airplane_to_destination(airplane: Airplane, dest: Coordinates):
-    end = move_x_steps_to_destination(airplane.tile.coordinates, dest, airplane_speed)
+    end = move_x_steps_to_destination(Coordinates(*airplane.tile.coordinates), dest, airplane_speed)
     airplane.move(end)
 
 def builder_collect_money(context: TurnContext, builder: Builder):
@@ -386,7 +386,7 @@ class MyStrategicApi(StrategicApi):
                     found_new_dest = False
                     for tile in get_ring_of_radius(self.context, airplane.tile.coordinates, 1):
                         if tile.country != self.context.my_country:
-                            destination = tile.coordinates
+                            destination = Coordinates(*tile.coordinates)
                             found_new_dest = True
                             break
                     

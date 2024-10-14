@@ -270,6 +270,8 @@ def builder_do_work(context: TurnContext, builder: Builder, piece_type: str):
                 builder.build_antitank()
             elif piece_type == 'artillery':
                 builder.build_artillery()
+            elif piece_type == 'iron_dome':
+                builder.build_iron_dome()
             context.log(f"builder built {piece_type}")
             commands[int(command_id)] = CommandStatus.success(command_id)
             del builder_to_building_command[builder.id]

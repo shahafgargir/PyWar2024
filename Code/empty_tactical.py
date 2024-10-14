@@ -124,7 +124,16 @@ def builder_get_tile_with_money(context: TurnContext, builder: Builder) -> Tile:
                 goodtiles.append(tile)
             
     if len(goodtiles) != 0:
-        chosen =  random.choice(goodtiles)
+        chosen = goodtiles[0]
+        sum_chosen = -1000
+        for tile in goodtiles:
+            sum_tile = 0
+            for tile in context.get_tiles_of_country(context.my_country):
+                if distance(tile, builder.tile.coordinates) < 5:
+                    sum_tile += context.tiles[tile].money - 5 * (distance(tile, builder.tile.coordinates) - 1) > 0
+            if sum_chosen < sum_tile:
+                sum_chosen = sum_tile
+                chosen = tile
         builder_chosen_tiles.add(chosen)
         return chosen
     

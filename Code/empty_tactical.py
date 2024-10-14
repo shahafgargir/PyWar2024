@@ -30,6 +30,9 @@ builder_money_taken: dict[Coordinates, list[int]] = {}
 def is_border(context: TurnContext, tile: Tile) -> bool:
     x, y = tile.coordinates
 
+    if tile.country != context.my_country:
+        return False
+
     if x > 0 and context.tiles[Coordinates(x - 1, y)].country != context.my_country:
         return True
 
@@ -423,7 +426,7 @@ class MyStrategicApi(StrategicApi):
         if tile.country is None:
             flag += 32
 
-        if tile.country == self.context.my_country and is_border(self.context, tile):
+        if is_border(self.context, tile):
             flag += 64
 
         if any([piece.type == 'tank' and piece.country != self.context.my_country for piece in tile.pieces]):

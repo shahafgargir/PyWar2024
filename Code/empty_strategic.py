@@ -105,16 +105,16 @@ def do_turn(strategic: StrategicApi):
 
     builders : dict[BasePiece, str] = strategic.report_builders()
 
-    MAX_BUILDERS = strategic.get_country_tiles_money() / 100
+    MAX_BUILDERS = strategic.get_total_country_tiles_money() / 100
 
     for builder in builders.keys():
         if builders[builder] is not None:
             continue
+        if builder.id not in builder_to_pieces_built:
+            builder_to_pieces_built[builder.id] = 1
         if len(builders) < MAX_BUILDERS:
             strategic.build_piece(builder, "builder")
             builder_built_builder.add(builder.id)
-        elif builder.id not in builder_to_pieces_built:
-            builder_to_pieces_built[builder.id] = 1
         elif builder_to_pieces_built[builder.id] % 5 == 0:
             strategic.build_piece(builder, "antitank")
         elif builder_to_pieces_built[builder.id] % 5 == 4:

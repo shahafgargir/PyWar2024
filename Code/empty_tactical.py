@@ -21,7 +21,7 @@ artillery_to_coordinate_to_attack: dict[str, tuple[Coordinates, int]] = {}
 
 
 commands = []
-price_per_piece = {'tank': 8, 'builder': 20, 'artillery': 8, 'antitank': 10}
+price_per_piece = {'tank': 8, 'builder': 20, 'artillery': 8, 'antitank': 10, 'iron_dome': 32, 'plane': 20, 'satellite': 64}
 
 builder_chosen_tiles = set()
 

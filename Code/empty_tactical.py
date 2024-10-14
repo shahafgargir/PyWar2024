@@ -227,6 +227,8 @@ def builder_do_work(context: TurnContext, builder: Builder, piece_type: str):
                 builder.build_artillery()
             elif piece_type == 'antitank':
                 builder.build_antitank()
+            elif piece_type == 'artillery':
+                builder.build_artillery()
             context.log(f"builder built {piece_type}")
             commands[int(command_id)] = CommandStatus.success(command_id)
             del builder_to_building_command[builder.id]
@@ -341,6 +343,15 @@ class MyStrategicApi(StrategicApi):
             if piece.type == 'antitank':
                 attacking_pieces[piece] = antitank_to_attacking_command.get(piece_id)
         return attacking_pieces
+    
+    def report_defending_pieces(self):
+        defending_pieces = {}
+        for piece_id, piece in self.context.my_pieces.items():
+            if piece.type == 'artillery':
+                defending_pieces[piece] = None
+        
+        return defending_pieces
+        
 
     def build_piece(self, piece, piece_type):
         builder: Builder = self.context.my_pieces[piece.id]

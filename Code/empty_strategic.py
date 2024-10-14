@@ -94,7 +94,9 @@ def do_turn(strategic: StrategicApi):
         if  builder.id not in builder_built_builder:
             strategic.build_piece(builder, "builder")
             builder_built_builder[builder.id] = 0
-        elif False:
+        elif builder_built_builder[builder.id] % 6 == 0:
+            strategic.build_piece(builder, "artillery")
+        elif builder_built_builder[builder.id] % 6 == 1:
             strategic.build_piece(builder, "antitank")
         else:
             strategic.build_piece(builder, "tank")

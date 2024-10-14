@@ -384,7 +384,9 @@ class MyStrategicApi(StrategicApi):
     def estimate_tile_danger(self, destination):
         tile = self.context.tiles[Coordinates(destination.x, destination.y)]
         if any([piece.country != self.context.my_country for piece in tile.pieces]):
-            if any([piece.type == 'artillery' and piece.country != self.context.my_country for piece in tile.pieces]):
+            if any([piece.type == 'antitank' and piece.country != self.context.my_country for piece in tile.pieces]):
+                return 5
+            elif any([piece.type == 'artillery' and piece.country != self.context.my_country for piece in tile.pieces]):
                 return 4
             elif any([piece.type == 'builder' and piece.country != self.context.my_country for piece in tile.pieces]):
                 return -1

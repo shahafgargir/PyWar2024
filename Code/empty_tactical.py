@@ -144,11 +144,11 @@ def builder_get_tile_with_money(context: TurnContext, builder: Builder) -> Tile:
 
             if tile_money == max_tile_amount:
                 goodtiles.append(tile)
-            
     if len(goodtiles) != 0:
         chosen =  random.choice(goodtiles)
         builder_chosen_tiles.add(chosen)
-        return chosen
+        return chosen    
+    
     
     for radius in sorted(tile_map.keys()):
         tiles_at_radius = tile_map[radius]

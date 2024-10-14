@@ -10,6 +10,7 @@ UNCLAIMED_TILE = 1
 ENEMY_TILE = 2
 ENEMY_TANK = 3
 ENEMY_ARTILLERY = 4
+ENEMY_ANTITANK = 5
 
 builder_built_builder = set()
 builder_to_pieces_built = {}
@@ -60,7 +61,7 @@ def get_tile_to_attack(strategic: StrategicApi, center: Coordinates, tank_tile: 
         
         for tile in get_ring_of_radius(strategic, tank_tile, radius):
             if piece.type == "tank":
-                if strategic.estimate_tile_danger(tile) != OUR_TILE:
+                if strategic.estimate_tile_danger(tile) != OUR_TILE and strategic.estimate_tile_danger(tile) != ENEMY_TANK:
                     possible_tiles.append(tile)
             elif piece.type == "antitank":
                 if strategic.estimate_tile_danger(tile) == ENEMY_TANK:

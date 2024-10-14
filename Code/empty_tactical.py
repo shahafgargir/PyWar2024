@@ -1,6 +1,6 @@
 import common_types
 from common_types import Coordinates
-from tactical_api import Tank, Antitank, Builder, TurnContext, distance, Tile
+from tactical_api import Tank, Antitank, Builder, TurnContext, distance, Tile, Artillery
 from strategic_api import CommandStatus, StrategicPiece
 from strategic_api import StrategicApi
 import math
@@ -14,6 +14,11 @@ antitank_to_attacking_command = {}
 
 builder_to_building_command = {}
 builder_to_piece_type = {}
+
+
+artillery_to_attacking_command = {}
+artillery_to_coordinate_to_attack: dict[str, tuple[Coordinates, int]] = {}
+
 
 commands = []
 price_per_piece = {'tank': 8, 'builder': 20, 'artillery': 8, 'antitank': 10}
@@ -198,6 +203,42 @@ def move_antitank_to_destination(antitank: Antitank, dest, context):
                                                           prev_command.estimated_turns - 1)
     return False
 
+def move_artillery_to_destination(artillery: Artillery, dest: Coordinates, radius: int, context: TurnContext):
+    """Returns True if the tank's mission is complete."""
+    command_id = artillery_to_attacking_command[artillery.id]
+    if dest is None:
+        commands[int(command_id)] = CommandStatus.failed(command_id)
+        return
+    artillery_coordinate = artillery.tile.coordinates
+
+    if radius != 3 and distance(dest, artillery_coordinate) == 0:
+        commands[int(command_id)] = CommandStatus.success(command_id)
+        del artillery_to_attacking_command[artillery.id]
+        return True
+    
+    # radius == 3 means attack
+    if radius == 3 and distance(dest, artillery_coordinate) <= 3:
+        artillery.attack(dest)
+        commands[int(command_id)] = CommandStatus.success(command_id)
+        del artillery_to_attacking_command[artillery.id]
+        return True
+    
+    if dest.x < artillery_coordinate.x:
+        new_coordinate = common_types.Coordinates(artillery_coordinate.x - 1, artillery_coordinate.y)
+    elif dest.x > artillery_coordinate.x:
+        new_coordinate = common_types.Coordinates(artillery_coordinate.x + 1, artillery_coordinate.y)
+    elif dest.y < artillery_coordinate.y:
+        new_coordinate = common_types.Coordinates(artillery_coordinate.x, artillery_coordinate.y - 1)
+    elif dest.y > artillery_coordinate.y:
+        new_coordinate = common_types.Coordinates(artillery_coordinate.x, artillery_coordinate.y + 1)
+    artillery.move(new_coordinate)
+    prev_command = commands[int(command_id)]
+    commands[int(command_id)] = CommandStatus.in_progress(command_id,
+                                                          prev_command.elapsed_turns + 1,
+                                                          prev_command.estimated_turns - 1)
+    return False
+
+
 def builder_collect_money(context: TurnContext, builder: Builder):
     if not builder or builder.type != 'builder':
         return None
@@ -244,6 +285,7 @@ class MyStrategicApi(StrategicApi):
         tanks_to_remove = set()
         antitanks_to_remove = set()
         builders_to_remove = set()
+        artillery_to_remove = set()
 
         builder_chosen_tiles.clear()
         builder_money_taken.clear()
@@ -263,6 +305,14 @@ class MyStrategicApi(StrategicApi):
                 continue
             if move_antitank_to_destination(antitank, destination, self.context):
                 antitanks_to_remove.add(antitank_id)
+
+        for artillery_id, (destination, radius) in artillery_to_coordinate_to_attack.items():
+            artillery: Artillery = self.context.my_pieces.get(artillery_id)
+            if artillery is None:
+                artillery_to_remove.add(artillery_id)
+                continue
+            if move_artillery_to_destination(artillery, destination, radius, self.context):
+                artillery_to_remove.add(artillery_id)
 
         for builder_id, piece_type in builder_to_piece_type.items():
             builder: Builder = self.context.my_pieces.get(builder_id)
@@ -314,6 +364,21 @@ class MyStrategicApi(StrategicApi):
                 antitank_to_coordinate_to_attack[piece.id] = destination
                 antitank_to_attacking_command[piece.id] = command_id
                 commands.append(attacking_command)
+            
+            if piece.type == 'artillery':
+                artillery = self.context.my_pieces[piece.id]
+                if not artillery or artillery.type != 'artillery':
+                    return None
+
+                if piece.id in artillery_to_attacking_command:
+                    old_command_id = int(artillery_to_attacking_command[piece.id])
+                    commands[old_command_id] = CommandStatus.failed(old_command_id)
+
+                command_id = str(len(commands))
+                attacking_command = CommandStatus.in_progress(command_id, 0, common_types.distance(artillery.tile.coordinates, destination))
+                artillery_to_coordinate_to_attack[piece.id] = (destination, radius)
+                artillery_to_attacking_command[piece.id] = command_id
+                commands.append(attacking_command)
 
 
     def estimate_tile_danger(self, destination):
@@ -344,14 +409,12 @@ class MyStrategicApi(StrategicApi):
                 attacking_pieces[piece] = tank_to_attacking_command.get(piece_id)
             if piece.type == 'antitank':
                 attacking_pieces[piece] = antitank_to_attacking_command.get(piece_id)
+            if piece.type == 'artillery':
+                attacking_pieces[piece] = artillery_to_attacking_command.get(piece_id)
         return attacking_pieces
     
     def report_defending_pieces(self):
         defending_pieces = {}
-        for piece_id, piece in self.context.my_pieces.items():
-            if piece.type == 'artillery':
-                defending_pieces[piece] = None
-        
         return defending_pieces
         
 

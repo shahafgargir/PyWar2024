@@ -5,12 +5,14 @@ from common_types import Coordinates, distance
 from strategic_api import StrategicApi, StrategicPiece
 from tactical_api import Tile, BasePiece
 
-OUR_TILE = 0
-UNCLAIMED_TILE = 1
-ENEMY_TILE = 2
-ENEMY_TANK = 3
-ENEMY_ARTILLERY = 4
-ENEMY_ANTITANK = 5
+ENEMY_TANK = 128
+BORDER_TILE = 64
+UNCLAIMED_TILE = 32
+OUR_TILE = 16
+ENEMY_UNIT = 8
+ENEMY_BUILDER = 4
+ENEMY_ARTILLERY = 2
+ANTITANK = 1
 
 builder_built_builder = set()
 builder_to_pieces_built = {}
@@ -63,18 +65,18 @@ def get_tile_to_attack(strategic: StrategicApi, center: Coordinates, tank_tile: 
         
         for tile in get_ring_of_radius(strategic, tank_tile, radius):
             if piece.type == "tank":
-                if strategic.estimate_tile_danger(tile) != OUR_TILE and strategic.estimate_tile_danger(tile) != ENEMY_TANK:
+                if strategic.estimate_tile_danger(tile) & (OUR_TILE | ANTITANK) == 0:
                     possible_tiles.append(tile)
             elif piece.type == "antitank":
-                if strategic.estimate_tile_danger(tile) == ENEMY_TANK:
+                if strategic.estimate_tile_danger(tile) & ENEMY_TANK == ENEMY_TANK:
                     possible_tiles.append(tile)
             elif piece.type == "artillery":
-                if strategic.estimate_tile_danger(tile) == ENEMY_ARTILLERY:
+                if strategic.estimate_tile_danger(tile) & ENEMY_ARTILLERY == ENEMY_ARTILLERY:
                     possible_tiles.clear()
                     possible_tiles.append(tile)
                     artillery_attack[piece.id] = True
                     break
-                elif strategic.estimate_tile_danger(tile) == OUR_TILE:
+                elif strategic.estimate_tile_danger(tile) & OUR_TILE == OUR_TILE:
                     possible_tiles.append(tile)
         else:
             if piece.type == "artillery":
@@ -93,6 +95,7 @@ def get_tile_to_attack(strategic: StrategicApi, center: Coordinates, tank_tile: 
 
 def do_turn(strategic: StrategicApi):
     global num_of_pieces_built
+
     attack_list.clear()
 
     attacking_pieces: dict[BasePiece, str] = strategic.report_attacking_pieces()
@@ -130,5 +133,4 @@ def do_turn(strategic: StrategicApi):
             strategic.build_piece(builder, "tank")
         
         num_of_pieces_built += 1
-
-
+        builder_to_pieces_built[builder.id] += 1

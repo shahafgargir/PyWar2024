@@ -92,7 +92,7 @@ def get_tile_to_attack(strategic: StrategicApi, center: Coordinates, tank_tile: 
 
 
 def do_turn(strategic: StrategicApi):
-    strategic.log("banana strategic!!!")
+    strategic.log("corn strategic!!!")
     global num_of_pieces_built
     attack_list.clear()
 

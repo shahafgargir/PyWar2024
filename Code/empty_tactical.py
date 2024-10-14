@@ -11,4 +11,3 @@ def get_strategic_implementation(context):
         return corn_tactical.MyStrategicApi(context)
     else:
         return banana_tactical.MyStrategicApi(context)
-    return MyStrategicApi(context)

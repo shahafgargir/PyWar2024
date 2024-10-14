@@ -367,6 +367,8 @@ class MyStrategicApi(StrategicApi):
             elif airplane.time_in_air == airplane_air_time - 1:
                 airplane.land()
                 commands[int(command_id)] = CommandStatus.success(command_id)
+                del airplane_to_attacking_command[airplane_id]
+                airplanes_to_remove.add(airplane_id)
             elif airplane.tile.coordinates == destination:
                 has_enemy = False
                 for p in airplane.tile.pieces:
@@ -376,6 +378,9 @@ class MyStrategicApi(StrategicApi):
                 if has_enemy:
                     airplane.attack()
                     commands[int(command_id)] = CommandStatus.success(command_id)
+                    del airplane_to_attacking_command[airplane_id]
+                    airplanes_to_remove.add(airplane_id)
+
                 else:
                     airplane_to_strike_count[airplane_id] += 1
                     found_new_dest = False
@@ -559,6 +564,8 @@ class MyStrategicApi(StrategicApi):
                 attacking_pieces[piece] = antitank_to_attacking_command.get(piece_id)
             if piece.type == 'artillery':
                 attacking_pieces[piece] = artillery_to_attacking_command.get(piece_id)
+            if piece.type == 'airplane':
+                attacking_pieces[piece] = airplane_to_attacking_command.get(piece_id)
         return attacking_pieces
     
     def report_defending_pieces(self):

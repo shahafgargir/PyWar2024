@@ -426,6 +426,9 @@ class MyStrategicApi(StrategicApi):
         if tile.country == self.context.my_country and is_border(self.context, tile):
             flag += 64
 
+        if any([piece.type == 'tank' and piece.country != self.context.my_country for piece in tile.pieces]):
+            flag += 128
+
         return flag
 
     def get_game_height(self):

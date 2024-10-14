@@ -381,7 +381,7 @@ class StrategicApi:
         """Returns the total amount of money the country has on its tiles."""
         raise NotImplementedError()
 
-    def report_builders(self) -> dict[StrategicPiece, tuple[None | str, int]]:
+    def report_builders(self) -> dict[StrategicPiece, tuple[str, int]]:
         """Report the current status of all builders.
 
         The returned value should be a `dict`, mapping from a `StrategicPiece`

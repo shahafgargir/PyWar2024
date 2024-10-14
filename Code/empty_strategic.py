@@ -5,17 +5,21 @@ from common_types import Coordinates, distance
 from strategic_api import StrategicApi, StrategicPiece
 from tactical_api import Tile, BasePiece
 
-OUR_TILE = 0
-UNCLAIMED_TILE = 1
-ENEMY_TILE = 2
-ENEMY_TANK = 3
-ENEMY_ARTILLERY = 4
-ENEMY_ANTITANK = 5
+ENEMY_TANK = 128
+BORDER_TILE = 64
+UNCLAIMED_TILE = 32
+OUR_TILE = 16
+ENEMY_UNIT = 8
+ENEMY_BUILDER = 4
+ENEMY_ARTILLERY = 2
+ANTITANK = 1
 
 builder_built_builder = set()
 builder_to_pieces_built = {}
 attack_list = set()
 artillery_attack = {}
+num_of_pieces_built = 0
+
 def mass_center_of_our_territory(strategic: StrategicApi) -> Coordinates:
     our_area = 0
     x_sum = 0
@@ -61,18 +65,18 @@ def get_tile_to_attack(strategic: StrategicApi, center: Coordinates, tank_tile: 
         
         for tile in get_ring_of_radius(strategic, tank_tile, radius):
             if piece.type == "tank":
-                if strategic.estimate_tile_danger(tile) != OUR_TILE and strategic.estimate_tile_danger(tile) != ENEMY_TANK:
+                if strategic.estimate_tile_danger(tile) & (OUR_TILE | ANTITANK) == 0:
                     possible_tiles.append(tile)
             elif piece.type == "antitank":
-                if strategic.estimate_tile_danger(tile) == ENEMY_TANK:
+                if strategic.estimate_tile_danger(tile) & ENEMY_TANK == ENEMY_TANK:
                     possible_tiles.append(tile)
             elif piece.type == "artillery":
-                if strategic.estimate_tile_danger(tile) == ENEMY_ARTILLERY:
+                if strategic.estimate_tile_danger(tile) & ENEMY_ARTILLERY == ENEMY_ARTILLERY:
                     possible_tiles.clear()
                     possible_tiles.append(tile)
                     artillery_attack[piece.id] = True
                     break
-                elif strategic.estimate_tile_danger(tile) == OUR_TILE:
+                elif strategic.estimate_tile_danger(tile) & OUR_TILE == OUR_TILE:
                     possible_tiles.append(tile)
         else:
             if piece.type == "artillery":
@@ -80,7 +84,7 @@ def get_tile_to_attack(strategic: StrategicApi, center: Coordinates, tank_tile: 
                 
         if len(possible_tiles) != 0 and piece.type != "artillery":
             return random.choice(possible_tiles)
-        elif piece.type == "artillery":
+        elif len(possible_tiles) != 0 and piece.type == "artillery":
             possible_tiles.sort(key = lambda c : distance(c, center), reverse=True)
             return possible_tiles[0]
 
@@ -90,6 +94,8 @@ def get_tile_to_attack(strategic: StrategicApi, center: Coordinates, tank_tile: 
 
 
 def do_turn(strategic: StrategicApi):
+    global num_of_pieces_built
+
     attack_list.clear()
 
     attacking_pieces: dict[BasePiece, str] = strategic.report_attacking_pieces()
@@ -100,8 +106,10 @@ def do_turn(strategic: StrategicApi):
         if piece.type == "artillery":
             tile_to_attack = get_tile_to_attack(strategic, mass_center_of_our_territory(strategic), piece.tile, piece)
             strategic.attack({StrategicPiece(piece.id, piece.type)},tile_to_attack, 3 if artillery_attack[piece.id] else 1)
-        else:
+        elif piece.type == "antitank" or piece.type == "tank":
             strategic.attack({StrategicPiece(piece.id, piece.type)}, get_tile_to_attack(strategic, mass_center_of_our_territory(strategic), piece.tile, piece), 1)
+        elif piece.type == "iron_dome":
+            strategic.attack({StrategicPiece(piece.id, piece.type)}, piece.tile.coordinates, 0)
 
     builders : dict[BasePiece, str] = strategic.report_builders()
 
@@ -117,13 +125,14 @@ def do_turn(strategic: StrategicApi):
         if len(builders) < MAX_BUILDERS:
             strategic.build_piece(builder, "builder")
             builder_built_builder.add(builder.id)
-        elif builder_to_pieces_built[builder.id] % 5 == 0:
+        elif num_of_pieces_built % 5 == 0:
             strategic.build_piece(builder, "antitank")
-        elif builder_to_pieces_built[builder.id] % 5 == 4:
+        elif num_of_pieces_built % 5 == 4:
             strategic.build_piece(builder, "artillery")
+        elif num_of_pieces_built % 20 == 1:
+            strategic.build_piece(builder, "iron_dome")
         else:
             strategic.build_piece(builder, "tank")
-
+        
+        num_of_pieces_built += 1
         builder_to_pieces_built[builder.id] += 1
-
-

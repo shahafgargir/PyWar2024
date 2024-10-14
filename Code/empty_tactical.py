@@ -354,6 +354,7 @@ class MyStrategicApi(StrategicApi):
                 tanks_to_remove.add(tank_id)
 
         for airplane_id, destination in airplane_to_coordinate_to_attack.items():
+            self.context.log(f"{airplane_id=}, {destination=}")
             airplane: Airplane = self.context.my_pieces.get(airplane_id)
             if airplane is None:
                 airplanes_to_remove.add(airplane_id)
@@ -514,7 +515,7 @@ class MyStrategicApi(StrategicApi):
 
                 command_id = str(len(commands))
                 attacking_command = CommandStatus.in_progress(command_id, 0, common_types.distance(airplane.tile.coordinates, destination))
-                airplane_to_coordinate_to_attack[piece.id] = (destination, radius)
+                airplane_to_coordinate_to_attack[piece.id] = destination
                 airplane_to_attacking_command[piece.id] = command_id
                 airplane_to_strike_count[piece.id] = 0
                 commands.append(attacking_command)

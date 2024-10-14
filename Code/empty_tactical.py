@@ -109,6 +109,17 @@ def get_ring_of_radius(context: TurnContext, coords: Coordinates, r: int) -> lis
     
     return ret
 
+def get_ball_of_radius(context: TurnContext, coords: Coordinates, r: int) -> list[Tile]:
+    ret = []
+    x, y = coords.x, coords.y
+    for i in range(-r, r+1):
+        for j in range(-r, r+1):
+            t = common_types.Coordinates((x+i) % context.game_width, (y+j) % context.game_height)
+            if common_types.distance(t, coords) <= r:
+                ret.append(context.tiles[t])
+    
+    return ret
+
 def get_tile_map(context: TurnContext, coords: Coordinates) -> dict[int, list[Tile]]:
     ret = {r:[] for r in range(60)}
     for tile_coords, tile in context.tiles.items():
@@ -144,11 +155,11 @@ def builder_get_tile_with_money(context: TurnContext, builder: Builder) -> Tile:
 
             if tile_money == max_tile_amount:
                 goodtiles.append(tile)
-            
     if len(goodtiles) != 0:
         chosen =  random.choice(goodtiles)
         builder_chosen_tiles.add(chosen)
-        return chosen
+        return chosen    
+    
     
     for radius in sorted(tile_map.keys()):
         tiles_at_radius = tile_map[radius]
@@ -367,37 +378,40 @@ class MyStrategicApi(StrategicApi):
                 move_airplane_to_destination(airplane, mass_center_of_our_territory(self.context))
             elif airplane.time_in_air == airplane_air_time - 1:
                 airplane.land()
-                commands[int(command_id)] = CommandStatus.success(command_id)
-                del airplane_to_attacking_command[airplane_id]
-                airplanes_to_remove.add(airplane_id)
-            elif airplane.tile.coordinates == destination:
-                has_enemy = False
-                for p in airplane.tile.pieces:
-                    if p.country != self.context.my_country:
-                        has_enemy = True
-                        break
-                if has_enemy:
-                    airplane.attack()
-                    commands[int(command_id)] = CommandStatus.success(command_id)
-                    del airplane_to_attacking_command[airplane_id]
-                    airplanes_to_remove.add(airplane_id)
-
-                else:
-                    airplane_to_strike_count[airplane_id] += 1
-                    found_new_dest = False
-                    for tile in get_ring_of_radius(self.context, airplane.tile.coordinates, 1):
-                        if tile.country != self.context.my_country:
-                            destination = tile.coordinates
-                            airplane_to_coordinate_to_attack[airplane_id] = destination
-                            found_new_dest = True
-                            break
-                    
-                    if not found_new_dest or airplane_to_strike_count[airplane_id] == 3:
-                        # Mark command as done.
-                        commands[int(command_id)] = CommandStatus.success(command_id)
+            elif any([p.country != self.context.my_country for p in airplane.tile.pieces]):
+                airplane.attack()
             else:
-                self.context.log(f"log1: {destination=}")
+                in_range_tiles = set(t.coordinates for t in get_ball_of_radius(self.context, airplane.tile.coordinates, 8))
+                iron_dome_protected_tiles_lst = [get_ball_of_radius(self.context, piece.tile.coordinates, 10) for piece in self.context.my_pieces.values() if piece.type == "iron_dome"]
+                iron_dome_protected_coords = set(coord.coordinates for coords_list in iron_dome_protected_tiles_lst for coord in coords_list)
+                good_tiles = in_range_tiles.intersection(iron_dome_protected_coords)
+                if len(good_tiles) == 0:
+                    destination = mass_center_of_our_territory(self.context)
+                else:
+                    destination = random.choice(list(good_tiles))
+                    self.context.log(f"found good tile {destination=}")
+
+                self.context.log(f"Airplane moving to iron dome: {destination=}")
                 move_airplane_to_destination(airplane, destination)
+
+                
+
+                # else:
+                #     airplane_to_strike_count[airplane_id] += 1
+                #     found_new_dest = False
+                #     for tile in get_ring_of_radius(self.context, airplane.tile.coordinates, 1):
+                #         if tile.country != self.context.my_country:
+                #             destination = tile.coordinates
+                #             airplane_to_coordinate_to_attack[airplane_id] = destination
+                #             found_new_dest = True
+                #             break
+                    
+                #     if not found_new_dest or airplane_to_strike_count[airplane_id] == 3:
+                #         # Mark command as done.
+                #         commands[int(command_id)] = CommandStatus.success(command_id)
+            # else:
+            #     self.context.log(f"log1: {destination=}")
+                # move_airplane_to_destination(airplane, destination)
         
         for antitank_id, destination in antitank_to_coordinate_to_attack.items():
             antitank: Antitank = self.context.my_pieces.get(antitank_id)

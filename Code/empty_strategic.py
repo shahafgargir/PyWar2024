@@ -81,16 +81,16 @@ def get_tile_to_attack(strategic: StrategicApi, center: Coordinates, tank_tile: 
         else:
             if piece.type == "artillery":
                 artillery_attack[piece.id] = False
-                
-        if len(possible_tiles) != 0 and piece.type != "artillery":
-            return random.choice(possible_tiles)
-        elif len(possible_tiles) != 0 and piece.type == "artillery":
-            possible_tiles.sort(key = lambda c : distance(c, center), reverse=True)
-            return possible_tiles[0]
-
-        else:
+        strategic.log(f"possible_tiles amnt: {len(possible_tiles)}")
+        if len(possible_tiles) == 0:
             radius += 1
             possible_tiles = []
+            continue
+        if piece.type == "artillery":
+            possible_tiles.sort(key = lambda c : distance(c, center), reverse=True)
+            return possible_tiles[0]
+        
+        return random.choice(possible_tiles)
 
 
 def do_turn(strategic: StrategicApi):

@@ -446,7 +446,7 @@ class MyStrategicApi(StrategicApi):
                 if piece.type == 'builder'}
 
     def get_total_country_tiles_money(self):
-        return sum([self.context.tiles[Coordinates(*coordinate)].money
+        return sum([(self.context.tiles[Coordinates(*coordinate)].money if self.context.tiles[Coordinates(*coordinate)].money is not None else 0) 
                     for coordinate in self.context.get_tiles_of_country(self.context.my_country)])
     
 def get_strategic_implementation(context):

@@ -319,7 +319,9 @@ class MyStrategicApi(StrategicApi):
     def estimate_tile_danger(self, destination):
         tile = self.context.tiles[Coordinates(destination.x, destination.y)]
         if any([piece.country != self.context.my_country for piece in tile.pieces]):
-            if any([piece.type == 'builder' and piece.country != self.context.my_country for piece in tile.pieces]):
+            if any([piece.type == 'artillery' and piece.country != self.context.my_country for piece in tile.pieces]):
+                return 4
+            elif any([piece.type == 'builder' and piece.country != self.context.my_country for piece in tile.pieces]):
                 return -1
             return 3
         elif tile.country == self.context.my_country:
@@ -379,6 +381,10 @@ class MyStrategicApi(StrategicApi):
         return {piece : builder_to_building_command.get(piece_id)
                 for piece_id, piece in self.context.my_pieces.items()
                 if piece.type == 'builder'}
+
+    def get_total_country_tiles_money(self):
+        return sum([self.context.tiles[Coordinates(*coordinate)].money
+                    for coordinate in self.context.get_tiles_of_country(self, self.context.my_country)])
     
 def get_strategic_implementation(context):
     return MyStrategicApi(context)

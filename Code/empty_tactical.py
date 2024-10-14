@@ -62,7 +62,7 @@ def get_ring_of_radius(context: TurnContext, coords: Coordinates, r: int) -> lis
     
     return ret
 
-def get_tile_map(context: TurnContext, coords: Coordinates):
+def get_tile_map(context: TurnContext, coords: Coordinates) -> dict[int, list[Tile]]:
     ret = {r:[] for r in range(60)}
     for tile_coords, tile in context.tiles.items():
         ret[distance(Coordinates(*tile_coords), coords)].append(tile)
@@ -76,6 +76,7 @@ def builder_get_tile_with_money(context: TurnContext, builder: Builder) -> Tile:
     coords = builder.tile.coordinates
     tile_map = get_tile_map(context, coords)
     for radius, tiles_at_radius in tile_map.items():
+        max_tile_amount = 0
         goodtiles = []
         for tile in tiles_at_radius:
             if tile.country != context.my_country:
@@ -84,7 +85,16 @@ def builder_get_tile_with_money(context: TurnContext, builder: Builder) -> Tile:
                 continue
             if tile in builder_chosen_tiles:
                 continue
-            goodtiles.append(tile)
+
+            if tile.money > max_tile_amount:
+                max_tile_amount = tile.money
+                goodtiles.clear()
+                goodtiles.append(tile)
+                continue
+            
+            if tile.money == max_tile_amount:
+                goodtiles.append(tile)
+            
         if len(goodtiles) != 0:
             return random.choice(goodtiles)
     

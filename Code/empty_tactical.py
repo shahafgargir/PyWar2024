@@ -67,6 +67,8 @@ def get_tile_map(context: TurnContext, coords: Coordinates) -> dict[int, list[Ti
     for tile_coords, tile in context.tiles.items():
         ret[distance(Coordinates(*tile_coords), coords)].append(tile)
     
+    del ret[0]
+    
     return ret
 
 
@@ -75,29 +77,59 @@ def get_tile_map(context: TurnContext, coords: Coordinates) -> dict[int, list[Ti
 def builder_get_tile_with_money(context: TurnContext, builder: Builder) -> Tile:
     coords = builder.tile.coordinates
     tile_map = get_tile_map(context, coords)
+    max_tile_amount = 0
+    goodtiles = []
     for radius, tiles_at_radius in tile_map.items():
-        max_tile_amount = 0
-        goodtiles = []
+
         for tile in tiles_at_radius:
+            tile_money = tile.money - 5*(radius - 1)
             if tile.country != context.my_country:
                 continue
-            if tile.money == 0:
+            if tile_money <= 0:
                 continue
             if tile in builder_chosen_tiles:
                 continue
 
-            if tile.money > max_tile_amount:
-                max_tile_amount = tile.money
+            if tile_money > max_tile_amount:
+                max_tile_amount = tile_money
                 goodtiles.clear()
                 goodtiles.append(tile)
                 continue
-            
-            if tile.money == max_tile_amount:
+
+            if tile_money == max_tile_amount:
                 goodtiles.append(tile)
             
-        if len(goodtiles) != 0:
-            return random.choice(goodtiles)
+    if len(goodtiles) != 0:
+        chosen =  random.choice(goodtiles)
+        builder_chosen_tiles.add(chosen)
+        return chosen
     
+    for radius in sorted(tile_map.keys()):
+        tiles_at_radius = tile_map[radius]
+        max_tile_amount = 0
+        goodtiles = []
+        for tile in tiles_at_radius:
+            tile_money = tile.money
+            if tile.country != context.my_country:
+                continue
+            if tile_money <= 0:
+                continue
+            if tile in builder_chosen_tiles:
+                continue
+
+            if tile_money > max_tile_amount:
+                max_tile_amount = tile_money
+                goodtiles.clear()
+                goodtiles.append(tile)
+                continue
+
+            if tile_money == max_tile_amount:
+                goodtiles.append(tile)
+        if len(goodtiles) != 0:
+            chosen =  random.choice(goodtiles)
+            builder_chosen_tiles.add(chosen)
+            return chosen
+        
     return context.tiles[mass_center_of_our_territory(context)]
 
 

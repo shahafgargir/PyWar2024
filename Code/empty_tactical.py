@@ -6,6 +6,15 @@ from strategic_api import StrategicApi
 import math
 import random
 
+ENEMY_TANK = 128
+BORDER_TILE = 64
+UNCLAIMED_TILE = 32
+OUR_TILE = 16
+ENEMY_UNIT = 8
+ENEMY_BUILDER = 4
+ENEMY_ARTILLERY = 2
+ANTITANK = 1
+
 tank_to_coordinate_to_attack = {}
 tank_to_attacking_command = {}
 
@@ -434,28 +443,28 @@ class MyStrategicApi(StrategicApi):
         flag = 0
 
         if any([piece.type == 'antitank' for piece in tile.pieces]):
-            flag += 1
+            flag |= ANTITANK
 
         if any([piece.type == 'artillery' and piece.country != self.context.my_country for piece in tile.pieces]):
-            flag += 2
+            flag |= ENEMY_ARTILLERY
 
         if any([piece.type == 'builder' and piece.country != self.context.my_country for piece in tile.pieces]):
-            flag += 4
+            flag |= ENEMY_BUILDER
 
         if any([piece.country != self.context.my_country for piece in tile.pieces]):
-            flag += 8
+            flag |= ENEMY_UNIT
 
         if tile.country == self.context.my_country:
-            flag += 16
+            flag |= OUR_TILE
 
         if tile.country is None:
-            flag += 32
+            flag |= UNCLAIMED_TILE
 
         if is_border(self.context, tile):
-            flag += 64
+            flag |= BORDER_TILE
 
         if any([piece.type == 'tank' and piece.country != self.context.my_country for piece in tile.pieces]):
-            flag += 128
+            flag |= ENEMY_TANK
 
         return flag
 

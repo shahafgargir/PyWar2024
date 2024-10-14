@@ -84,7 +84,7 @@ def get_tile_to_attack(strategic: StrategicApi, center: Coordinates, tank_tile: 
                 
         if len(possible_tiles) != 0 and piece.type != "artillery":
             return random.choice(possible_tiles)
-        elif piece.type == "artillery":
+        elif len(possible_tiles) != 0 and piece.type == "artillery":
             possible_tiles.sort(key = lambda c : distance(c, center), reverse=True)
             return possible_tiles[0]
 

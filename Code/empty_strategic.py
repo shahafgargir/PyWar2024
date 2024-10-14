@@ -133,7 +133,7 @@ def do_turn(strategic: StrategicApi):
         if len(builders) < MAX_BUILDERS:
             strategic.build_piece(builder, "builder")
             builder_built_builder.add(builder.id)
-        elif num_of_pieces_built % 9 == 4:
+        elif num_of_pieces_built % 5 == 4:
             strategic.build_piece(builder, "artillery")
         elif num_of_pieces_built % 20 == 19:
             strategic.build_piece(builder, "iron_dome")

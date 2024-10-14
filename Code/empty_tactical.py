@@ -6,10 +6,9 @@ import banana_tactical
 MAP_BOUND = 15
     
 
-class MyStrategicApi(StrategicApi):
-    def __init__(self, *args, **kwargs):
-        super(MyStrategicApi, self).__init__(*args, **kwargs)
-        if self.context.game_height > MAP_BOUND:
-            return corn_tactical.MyStrategicApi().__init__(*args, **kwargs)
-        else:
-            return banana_tactical.MyStrategicApi().__init__(*args, **kwargs)
+def get_strategic_implementation(context):
+    if context.game_height > MAP_BOUND:
+        return corn_tactical.MyStrategicApi(context)
+    else:
+        return banana_tactical.MyStrategicApi(context)
+    return MyStrategicApi(context)

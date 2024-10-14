@@ -521,5 +521,13 @@ class MyStrategicApi(StrategicApi):
         return sum([(self.context.tiles[Coordinates(*coordinate)].money if self.context.tiles[Coordinates(*coordinate)].money is not None else 0) 
                     for coordinate in self.context.get_tiles_of_country(self.context.my_country)])
     
+    def report_required_tiles_for_attacks(self) -> list[tuple[Coordinates, int]]:
+        ret = []
+        for piece in self.context.my_pieces.values():
+            if piece.type == 'tank':
+                ret.append((piece.tile.coordinates, 0))
+        
+        return ret
+    
 def get_strategic_implementation(context):
     return MyStrategicApi(context)

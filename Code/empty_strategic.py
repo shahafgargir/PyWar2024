@@ -81,12 +81,23 @@ def get_tile_to_attack(strategic: StrategicApi, center: Coordinates, tank_tile: 
         else:
             if piece.type == "artillery":
                 artillery_attack[piece.id] = False
-        if piece.type == "tank":
-            strategic.log(f"piece: {piece.type=} {radius=} possible_tiles amnt: {len(possible_tiles)}")
         if len(possible_tiles) == 0:
             radius += 1
             possible_tiles = []
             continue
+        if piece.type == "tank":
+            tank_attacking_tiles = strategic.report_required_tiles_for_attacks()
+            
+            weight_array = []
+            for coord in possible_tiles:
+                sum_distances = sum([distance(coord, t[0]) for t in tank_attacking_tiles])
+                weight_array.append(sum_distances)
+            
+            s = sum(weight_array)
+            weight_array = list(map(lambda x: x / s, weight_array))
+
+            return random.choices(population=possible_tiles, weights=weight_array, k=1)[0]
+
         
         return random.choice(possible_tiles)
 

@@ -1,5 +1,5 @@
 import random
-
+import math
 import common_types
 from common_types import Coordinates, distance
 from strategic_api import StrategicApi, StrategicPiece
@@ -11,7 +11,8 @@ ENEMY_TILE = 2
 ENEMY_TANK = 3
 ENEMY_ARTILLERY = 4
 
-builder_built_builder = {}
+builder_built_builder = set()
+builder_to_pieces_built = {}
 attack_list = set()
 artillery_attack = {}
 def mass_center_of_our_territory(strategic: StrategicApi) -> Coordinates:
@@ -54,7 +55,7 @@ def get_tile_to_attack(strategic: StrategicApi, center: Coordinates, tank_tile: 
     while True:
         if radius >= 50:
             possible_tiles = get_ring_of_radius(strategic, tank_tile, 5)
-            possible_tiles.sort(key = lambda c : distance(c, center))
+            possible_tiles.sort(key = lambda c : distance(c, center), reverse=True)
             return possible_tiles[0]
         
         for tile in get_ring_of_radius(strategic, tank_tile, radius):
@@ -103,25 +104,23 @@ def do_turn(strategic: StrategicApi):
 
     builders : dict[BasePiece, str] = strategic.report_builders()
 
-    MAX_BUILDERS = 10
-    if strategic.get_game_height() < 15:
-        MAX_BUILDERS = 3
+    MAX_BUILDERS = strategic.get_country_tiles_money() / 100
 
     for builder in builders.keys():
         if builders[builder] is not None:
             continue
-        if builder.id not in builder_built_builder and len(builders) >= MAX_BUILDERS:
-            builder_built_builder[builder.id] = 1
-        if  builder.id not in builder_built_builder:
+        if len(builders) < MAX_BUILDERS:
             strategic.build_piece(builder, "builder")
-            builder_built_builder[builder.id] = 0
-        elif builder_built_builder[builder.id] % 3 == 0:
-            strategic.build_piece(builder, "artillery")
-        elif builder_built_builder[builder.id] % 12 == 1:
+            builder_built_builder.add(builder.id)
+        elif builder.id not in builder_to_pieces_built:
+            builder_to_pieces_built[builder.id] = 1
+        elif builder_to_pieces_built[builder.id] % 5 == 0:
             strategic.build_piece(builder, "antitank")
+        elif builder_to_pieces_built[builder.id] % 5 == 4:
+            strategic.build_piece(builder, "artillery")
         else:
             strategic.build_piece(builder, "tank")
 
-        builder_built_builder[builder.id] += 1
+        builder_to_pieces_built[builder.id] += 1
 
 

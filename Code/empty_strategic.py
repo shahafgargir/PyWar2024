@@ -52,7 +52,7 @@ def get_tile_to_attack(strategic: StrategicApi, center: Coordinates, tank_tile: 
     while True:
         if radius >= 50:
             possible_tiles = get_ring_of_radius(strategic, tank_tile, 5)
-            possible_tiles.sort(key = lambda c : distance(c, center), reverse=True)
+            possible_tiles.sort(key = lambda c : distance(c, center))
             return possible_tiles[0]
         
         for tile in get_ring_of_radius(strategic, tank_tile, radius):

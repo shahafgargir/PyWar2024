@@ -18,7 +18,10 @@ builder_built_builder = set()
 builder_to_pieces_built = {}
 attack_list = set()
 artillery_attack = {}
+assigned_artilleries : dict[str:str] = {}
+assigned_tanks : dict[str:str] = {}
 num_of_pieces_built = 0
+
 
 def mass_center_of_our_territory(strategic: StrategicApi) -> Coordinates:
     our_area = 0
@@ -92,6 +95,40 @@ def get_tile_to_attack(strategic: StrategicApi, center: Coordinates, tank_tile: 
             radius += 1
             possible_tiles = []
 
+def find_best_tank(attacking_pieces: dict[BasePiece, str]) -> BasePiece:
+    tanks: list[BasePiece] = [piece for piece in attacking_pieces.keys() if piece.type=='tank']
+    assigned: list[BasePiece] = [tank for tank in tanks if tank.id in assigned_artilleries]
+    non_assigned: list[BasePiece] = [tank for tank in tanks if tank.id not in assigned_artilleries]
+    if not non_assigned:
+        return None
+    if not assigned:
+        return non_assigned[0]
+    best_tank = max(non_assigned,
+                    key=lambda t:min([common_types.distance(t.tile.coordinates,tank.tile.coordinates) for tank in assigned]))
+    return best_tank
+
+
+def assign_artilleries(attacking_pieces: dict[BasePiece, str]):
+    arties: list[BasePiece] = [piece for piece in attacking_pieces.keys() if piece.type=='artillery' and piece.id not in assigned_tanks]
+    for arty in arties:
+        tank = find_best_tank(attacking_pieces)
+        if not tank:
+            return
+        assigned_tanks[arty.id] = tank.id
+        assigned_artilleries[tank.id] = arty.id
+
+
+def move_artillery(strategic: StrategicApi, attacking_pieces: dict[BasePiece,str], piece: BasePiece):
+    if piece.id in assigned_tanks:
+        art_tank_id = assigned_tanks[piece.id]
+        art_tank = [tank for tank in attacking_pieces if tank.id == art_tank_id][0]
+        tile_to_attack = art_tank.tile
+        if common_types.distance(tile_to_attack.coordinates,piece.tile.coordinates) > 1:
+            strategic.attack({StrategicPiece(piece.id, piece.type)},tile_to_attack.coordinates, 1)
+    else:
+        tile_to_attack = get_tile_to_attack(strategic, mass_center_of_our_territory(strategic), piece.tile, piece)
+        strategic.attack({StrategicPiece(piece.id, piece.type)},tile_to_attack, 3 if artillery_attack[piece.id] else 1)
+
 
 def do_turn(strategic: StrategicApi):
     global num_of_pieces_built
@@ -100,16 +137,22 @@ def do_turn(strategic: StrategicApi):
 
     attacking_pieces: dict[BasePiece, str] = strategic.report_attacking_pieces()
 
+    assign_artilleries(attacking_pieces)
+
     for piece, command_id in attacking_pieces.items():
         if command_id is not None:
             continue
         if piece.type == "artillery":
-            tile_to_attack = get_tile_to_attack(strategic, mass_center_of_our_territory(strategic), piece.tile, piece)
-            strategic.attack({StrategicPiece(piece.id, piece.type)},tile_to_attack, 3 if artillery_attack[piece.id] else 1)
+            move_artillery(strategic, attacking_pieces, piece)
         elif piece.type == "antitank" or piece.type == "tank":
-            strategic.attack({StrategicPiece(piece.id, piece.type)}, get_tile_to_attack(strategic, mass_center_of_our_territory(strategic), piece.tile, piece), 1)
+            tile_to_attack = get_tile_to_attack(strategic, mass_center_of_our_territory(strategic), piece.tile, piece)
+            strategic.attack({StrategicPiece(piece.id, piece.type)}, tile_to_attack, 1)
         elif piece.type == "iron_dome":
             strategic.attack({StrategicPiece(piece.id, piece.type)}, piece.tile.coordinates, 0)
+
+
+    
+
 
     builders : dict[BasePiece, str] = strategic.report_builders()
 

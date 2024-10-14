@@ -1,6 +1,6 @@
 import common_types
 from common_types import Coordinates
-from tactical_api import Tank, Antitank, Builder, TurnContext, distance, Tile, Artillery, IronDome, BasePiece
+from tactical_api import Tank, Antitank, Builder, TurnContext, distance, Tile, Artillery, IronDome, BasePiece, Airplane
 from strategic_api import CommandStatus, StrategicPiece
 from strategic_api import StrategicApi
 import math
@@ -18,6 +18,10 @@ ANTITANK = 1
 tank_to_coordinate_to_attack = {}
 tank_to_attacking_command = {}
 
+airplane_to_coordinate_to_attack = {}
+airplane_to_attacking_command = {}
+airplane_to_strike_count = {}
+
 antitank_to_coordinate_to_attack = {}
 antitank_to_attacking_command = {}
 
@@ -30,10 +34,10 @@ artillery_to_coordinate_to_attack: dict[str, tuple[Coordinates, int]] = {}
 
 
 commands = []
-price_per_piece = {'tank': 8, 'builder': 20, 'artillery': 8, 'antitank': 10, 'iron_dome': 32, 'plane': 20, 'satellite': 64}
+price_per_piece = {'tank': 8, 'builder': 20, 'artillery': 8, 'antitank': 10, 'iron_dome': 32, 'airplane': 20, 'satellite': 64}
 
 builder_chosen_tiles = set()
-
+airplane_air_time, airplane_speed = 16, 8
 builder_money_taken: dict[Coordinates, list[int]] = {}
 
 def iron_dome_distances(context: TurnContext, iron_dome: IronDome):
@@ -273,6 +277,17 @@ def move_artillery_to_destination(artillery: Artillery, dest: Coordinates, radiu
                                                           prev_command.estimated_turns - 1)
     return False
 
+def move_x_steps_to_destination(start: Coordinates, dest: Coordinates, x: int) -> Coordinates:
+    for _ in range(x):
+        if start == dest:
+            break
+        start = get_step_to_destination(start, dest)
+    return start
+
+# If there is a conqured tile, move to it - otherwise - move 8 tiles towards this destination.
+def move_airplane_to_destination(airplane: Airplane, dest: Coordinates):
+    end = move_x_steps_to_destination(airplane.tile.coordinates, dest, airplane_speed)
+    airplane.move(end)
 
 def builder_collect_money(context: TurnContext, builder: Builder):
     if not builder or builder.type != 'builder':
@@ -307,6 +322,8 @@ def builder_do_work(context: TurnContext, builder: Builder, piece_type: str):
                 builder.build_artillery()
             elif piece_type == 'iron_dome':
                 builder.build_iron_dome()
+            elif piece_type == 'airplane':
+                builder.build_airplane()
             context.log(f"builder built {piece_type}")
             commands[int(command_id)] = CommandStatus.success(command_id)
             del builder_to_building_command[builder.id]
@@ -323,6 +340,7 @@ class MyStrategicApi(StrategicApi):
         antitanks_to_remove = set()
         builders_to_remove = set()
         artillery_to_remove = set()
+        airplanes_to_remove = set()
 
         builder_chosen_tiles.clear()
         builder_money_taken.clear()
@@ -335,6 +353,44 @@ class MyStrategicApi(StrategicApi):
             if move_tank_to_destination(tank, destination, self.context):
                 tanks_to_remove.add(tank_id)
 
+        for airplane_id, destination in airplane_to_coordinate_to_attack.items():
+            airplane: Airplane = self.context.my_pieces.get(airplane_id)
+            if airplane is None:
+                airplanes_to_remove.add(airplane_id)
+                continue
+            
+            command_id = airplane_to_attacking_command[airplane_id]
+            if not airplane.in_air:
+                airplane.take_off()
+            if airplane.time_in_air == airplane_air_time - 2:
+                move_airplane_to_destination(airplane, mass_center_of_our_territory(self.context))
+            elif airplane.time_in_air == airplane_air_time - 1:
+                airplane.land()
+                commands[int(command_id)] = CommandStatus.success(command_id)
+            elif airplane.tile.coordinates == destination:
+                has_enemy = False
+                for p in airplane.tile.pieces:
+                    if p.country != self.context.my_country:
+                        has_enemy = True
+                        break
+                if has_enemy:
+                    airplane.attack()
+                    commands[int(command_id)] = CommandStatus.success(command_id)
+                else:
+                    airplane_to_strike_count[airplane_id] += 1
+                    found_new_dest = False
+                    for tile in get_ring_of_radius(self.context, airplane.tile.coordinates, 1):
+                        if tile.country != self.context.my_country:
+                            destination = tile.coordinates
+                            found_new_dest = True
+                            break
+                    
+                    if not found_new_dest or airplane_to_strike_count[airplane_id] == 3:
+                        # Mark command as done.
+                        commands[int(command_id)] = CommandStatus.success(command_id)
+            else:
+                move_airplane_to_destination(airplane, destination)
+        
         for antitank_id, destination in antitank_to_coordinate_to_attack.items():
             antitank: Antitank = self.context.my_pieces.get(antitank_id)
             if antitank is None:
@@ -362,6 +418,10 @@ class MyStrategicApi(StrategicApi):
         for tank_id in tanks_to_remove:
             del tank_to_coordinate_to_attack[tank_id]
 
+        for airplane_id in airplanes_to_remove:
+            del airplane_to_strike_count[airplane_id]
+            del airplane_to_coordinate_to_attack[airplane_id]
+        
         for antitank_id in antitanks_to_remove:
             del antitank_to_coordinate_to_attack[antitank_id]
 
@@ -435,6 +495,22 @@ class MyStrategicApi(StrategicApi):
 
                 if not acted:
                     iron_dome.move(get_step_to_destination(iron_dome.tile.coordinates, closest_border(self.context, iron_dome)[0].coordinates))
+            
+            if piece.type == 'airplane':
+                airplane = self.context.my_pieces[piece.id]
+                if not airplane or airplane.type != 'airplane':
+                    return None
+
+                if piece.id in airplane_to_attacking_command:
+                    old_command_id = int(airplane_to_attacking_command[piece.id])
+                    commands[old_command_id] = CommandStatus.failed(old_command_id)
+
+                command_id = str(len(commands))
+                attacking_command = CommandStatus.in_progress(command_id, 0, common_types.distance(airplane.tile.coordinates, destination))
+                airplane_to_coordinate_to_attack[piece.id] = (destination, radius)
+                airplane_to_attacking_command[piece.id] = command_id
+                airplane_to_strike_count[piece.id] = 0
+                commands.append(attacking_command)
 
 
     def estimate_tile_danger(self, destination):

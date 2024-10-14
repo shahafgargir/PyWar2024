@@ -9,9 +9,11 @@ OUR_TILE = 0
 UNCLAIMED_TILE = 1
 ENEMY_TILE = 2
 ENEMY_TANK = 3
+ENEMY_ARTILLERY = 4
 
 builder_built_builder = {}
 attack_list = set()
+artillery_attack = {}
 def mass_center_of_our_territory(strategic: StrategicApi) -> Coordinates:
     our_area = 0
     x_sum = 0
@@ -62,9 +64,24 @@ def get_tile_to_attack(strategic: StrategicApi, center: Coordinates, tank_tile: 
             elif piece.type == "antitank":
                 if strategic.estimate_tile_danger(tile) == ENEMY_TANK:
                     possible_tiles.append(tile)
+            elif piece.type == "artillery":
+                if strategic.estimate_tile_danger(tile) == ENEMY_ARTILLERY:
+                    possible_tiles.clear()
+                    possible_tiles.append(tile)
+                    artillery_attack[piece.id] = True
+                    break
+                elif strategic.estimate_tile_danger(tile) == OUR_TILE:
+                    possible_tiles.append(tile)
+        else:
+            if piece.type == "artillery":
+                artillery_attack[piece.id] = False
                 
-        if len(possible_tiles) != 0:
+        if len(possible_tiles) != 0 and piece.type != "artillery":
             return random.choice(possible_tiles)
+        elif piece.type == "artillery":
+            possible_tiles.sort(key = lambda c : distance(c, center), reverse=True)
+            return possible_tiles[0]
+
         else:
             radius += 1
             possible_tiles = []
@@ -78,7 +95,11 @@ def do_turn(strategic: StrategicApi):
     for piece, command_id in attacking_pieces.items():
         if command_id is not None:
             continue
-        strategic.attack({StrategicPiece(piece.id, piece.type)}, get_tile_to_attack(strategic, mass_center_of_our_territory(strategic), piece.tile, piece), 1)
+        if piece.type == "artillery":
+            tile_to_attack = get_tile_to_attack(strategic, mass_center_of_our_territory(strategic), piece.tile, piece)
+            strategic.attack({StrategicPiece(piece.id, piece.type)},tile_to_attack, 3 if artillery_attack[piece.id] else 1)
+        else:
+            strategic.attack({StrategicPiece(piece.id, piece.type)}, get_tile_to_attack(strategic, mass_center_of_our_territory(strategic), piece.tile, piece), 1)
 
     builders : dict[BasePiece, str] = strategic.report_builders()
 

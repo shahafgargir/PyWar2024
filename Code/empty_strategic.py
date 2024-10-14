@@ -162,7 +162,7 @@ def do_turn(strategic: StrategicApi):
             strategic.build_piece(builder, "artillery")
         elif num_of_pieces_built % 20 == 17:
             strategic.build_piece(builder, "iron_dome")
-        elif num_of_pieces_built % 20 == 19:
+        elif num_of_pieces_built % 20 == 18:
             strategic.build_piece(builder, "airplane")
         else:
             strategic.build_piece(builder, "tank")
